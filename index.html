@@ -259,9 +259,45 @@ function toast(m, bad) {
 }
 function busyBtn(b, label) { if (!b) return () => {}; const old = b.innerHTML; b.disabled = true; b.classList.add('busy'); b.innerHTML = '<span class="spin"></span>' + label;
   return () => { if (b.isConnected) { b.disabled = false; b.classList.remove('busy'); b.innerHTML = old; } }; }
+/* ===== ذاكرة مؤقتة للقراءة: الشاشة تظهر فورًا من آخر نسخة، ثم تُحدَّث بهدوء من الخادم ===== */
+const READS = { publicSummary: 1, publicReport: 1, dashboard: 1, listDeposits: 1, listBeneficiaries: 1, openOrders: 1, listOperating: 1, internalReport: 1, adminHome: 1, getSettings: 1, listUsers: 1, getReceipt: 1, getVoucher: 1 };
+const CACHE = new Map(), INFL = new Map(); let GEN = 0;
+const NOINV = { login: 1, exportData: 1, exportReport: 1, backupNow: 1 };
+const FRESH_MS = 20000; // أقل من هذا لا يُعاد الطلب أصلًا
+try { const ps = JSON.parse(localStorage.getItem('fund-ps') || 'null'); if (ps) CACHE.set('publicSummary|{}', { s: JSON.stringify(ps), t: 0, gen: 0 }); } catch (e) { } // بيانات عامة فقط
+function fetchStore(a, p, k) {
+  if (INFL.has(k)) return INFL.get(k);
+  const g = GEN, pr = call_(a, p).then(d => { const s = JSON.stringify(d); if (g === GEN) CACHE.set(k, { s: s, t: Date.now(), gen: g });
+    if (a === 'publicSummary') try { localStorage.setItem('fund-ps', s); } catch (e) { } return d; }).finally(() => INFL.delete(k));
+  INFL.set(k, pr); return pr;
+}
+/** قراءة مع ذاكرة: تُعيد المخزَّن فورًا إن وُجد، وتحدّثه في الخلفية؛ وإن تغيّرت البيانات تُعاد رسم الشاشة */
+function cget(a, p, k) {
+  k = k || a + '|' + JSON.stringify(p || {}); const e = CACHE.get(k);
+  if (e && e.gen === GEN) {
+    if (Date.now() - e.t > FRESH_MS && !INFL.has(k)) fetchStore(a, p, k).then(d => { if (JSON.stringify(d) !== e.s) softRefresh(); }, () => { });
+    return Promise.resolve(JSON.parse(e.s));
+  }
+  return fetchStore(a, p, k);
+}
+/** بعد أي حفظ: تُبطَل الذاكرة كلها ويُعاد جلب آخر الشاشات المستخدمة في الخلفية */
+function invalidate() {
+  const keys = Array.from(CACHE.keys()).filter(k => !/^(getReceipt|getVoucher|publicReport|internalReport)\|/.test(k)).slice(-6); GEN++; CACHE.clear(); INFL.clear();
+  keys.forEach(k => { const i = k.indexOf('|'); fetchStore(k.slice(0, i), JSON.parse(k.slice(i + 1)), k).catch(() => { }); });
+}
+function softRefresh() {
+  const ae = document.activeElement; if (ae && /^(INPUT|TEXTAREA|SELECT)$/.test(ae.tagName)) return;
+  if (document.querySelector('dialog[open]') || ($('#fm') && $('#fm').innerHTML.trim())) return;
+  const y = window.scrollY;
+  if (document.body.classList.contains('admin')) { if (!me || ['dash', 'list', 'ben', 'ops', 'users'].indexOf(CUR) < 0) return; sub(CUR, undefined, true, true); }
+  else if (tab === 'home') go('home', true); else return;
+  setTimeout(() => window.scrollTo(0, y), 60);
+}
+function prefetch() { if (!me) return; const y = hijri(today()).split('-')[2]; [['listDeposits', {}], ['listBeneficiaries', { year: BY || y }]].forEach(x => cget(x[0], x[1]).catch(() => { })); }
 function call(a, p) {
+  if (READS[a]) { const k = a + '|' + JSON.stringify(p || {}), e = CACHE.get(k); if (e && e.gen === GEN) return cget(a, p, k); }
   const done = busyBtn(ACT, WRITE[a] || 'جارٍ التحميل…'); ACT = null; PEND++; document.body.classList.add('loading');
-  return call_(a, p).then(d => { if (DONE[a]) toast(DONE[a]); return d; }, e => { if (/^انتهت الجلسة/.test(e.message) && me) { sessionExpired(); throw e; } toast(String(e.message).replace(/^DUP:/, ''), true); throw e; })
+  return (READS[a] ? cget(a, p) : call_(a, p)).then(d => { if (!READS[a] && !NOINV[a]) invalidate(); if (DONE[a]) toast(DONE[a]); return d; }, e => { if (!READS[a] && !NOINV[a]) invalidate(); if (/^انتهت الجلسة/.test(e.message) && me) { sessionExpired(); throw e; } toast(String(e.message).replace(/^DUP:/, ''), true); throw e; })
     .finally(() => { done(); if (--PEND <= 0) { PEND = 0; document.body.classList.remove('loading'); } });
 }
 function call_(a, p) {
@@ -449,9 +485,9 @@ function enterAdmin(fresh) {
     '<div class="sd-g">أخرى</div>' + it('rep') + it('users') + it('settings') + '<button type="button" data-nav="public">' + svg('public') + '<span>الصفحة العامة</span></button></div>';
   const bt = (g, k, ic, t) => '<button type="button" data-nav="' + k + '" data-g="' + g + '">' + svg(ic) + '<span>' + t + '</span><i class="bdg hid" data-b="' + g + '"></i></button>';
   $('#bnav').innerHTML = bt('dash', 'dash', 'home', 'الرئيسية') + bt('rev', 'rev', 'in', 'الإيرادات') + bt('exp', 'exp', 'out', 'الصرف') + bt('more', 'more', 'more', 'المزيد');
-  BADGE_AT = 0; sub(fresh ? 'dash' : (CUR || 'dash'));
+  BADGE_AT = 0; sub(fresh ? 'dash' : (CUR || 'dash')); setTimeout(prefetch, 1500);
 }
-function exitAdmin() { token = null; me = null; document.body.classList.remove('admin'); go('home'); }
+function exitAdmin() { token = null; me = null; GEN++; CACHE.clear(); INFL.clear(); document.body.classList.remove('admin'); go('home'); }
 async function logout() { if (await ask('تسجيل الخروج؟', 'ستحتاج إلى اسم المستخدم وكلمة المرور للدخول مرة أخرى.', 'خروج', true)) { exitAdmin(); toast('تم تسجيل الخروج'); } }
 $('#out2').onclick = logout;
 document.addEventListener('click', e => {
@@ -461,7 +497,7 @@ document.addEventListener('click', e => {
   const k = n.dataset.nav; if (k === 'public') { document.body.classList.remove('admin'); go('home'); return; }
   sub(k === 'rev' ? LAST.rev : k === 'exp' ? LAST.exp : k);
 });
-function sub(n, pf, noPush) {
+function sub(n, pf, noPush, soft) {
   if (!me) return go('panel');
   if (!SEC[n] || !can(n)) n = 'dash';
   CUR = n; const g = SEC[n].g; if (GRP[g]) LAST[g] = n;
@@ -469,7 +505,7 @@ function sub(n, pf, noPush) {
   $('#abs').textContent = GRP[g] ? GT[g] + ' · ' + SEC[n].t : SEC[n].t; document.title = SEC[n].t + ' — ' + $('#fund').textContent;
   document.querySelectorAll('#side [data-nav]').forEach(b => { const on = b.dataset.nav === n; b.classList.toggle('on', on); b.setAttribute('aria-current', on ? 'page' : 'false'); });
   document.querySelectorAll('#bnav [data-g]').forEach(b => { const on = b.dataset.g === g || (g === 'more' && b.dataset.g === 'more'); b.classList.toggle('on', on); b.setAttribute('aria-current', on ? 'page' : 'false'); });
-  setFab(n); window.scrollTo(0, 0); refreshBadges();
+  setFab(n); if (!soft) { window.scrollTo(0, 0); refreshBadges(); }
   if (n === 'rep') { report().catch(fail); return; }
   $('#view').innerHTML = (GRP[g] ? '<div class="sub gchips" role="tablist">' + GRP[g].filter(can).map(k => '<button type="button" role="tab" data-nav="' + k + '" class="' + (k === n ? 'on' : '') + '" aria-selected="' + (k === n) + '">' + SEC[k].t + '</button>').join('') + '</div>' : '') + '<div id="sv"></div>';
   ({ dash, imp, add, ben, ops, list, users, settings, more: moreMenu })[n](pf).catch(e => { if ($('#sv')) $('#sv').innerHTML = '<div class="msg">' + esc(e.message) + '</div>'; });
@@ -488,21 +524,21 @@ function pickBen() {
 }
 function refreshBadges(force) {
   if (!me || (!force && Date.now() - BADGE_AT < 8000)) return; BADGE_AT = Date.now();
-  call_('adminHome', { light: true }).then(d => setBadges(d.ord)).catch(() => { });
+  cget('adminHome', { light: true }).then(d => setBadges(d.ord)).catch(() => { });
 }
 function setBadges(o) {
   const v = { exp: o.appr.n + o.apprOp.n, ben: o.appr.n, ops: o.apprOp.n, rev: o.sent.n, imp: o.sent.n };
   document.querySelectorAll('.bdg').forEach(b => { const n = v[b.dataset.b] || 0; b.textContent = n > 99 ? '99+' : n; b.classList.toggle('hid', !n); });
 }
 setInterval(() => { if (me && !WARNED && LOGIN_AT && Date.now() - LOGIN_AT > 340 * 60000) { WARNED = true; toast('ستنتهي جلستك خلال 20 دقيقة تقريبًا. احفظ عملك.', true); } }, 60000);
-async function sessionExpired() { if (!me) return; token = null; me = null; await ask('انتهت الجلسة', 'لحماية البيانات تنتهي الجلسة بعد 6 ساعات. سجّل الدخول من جديد للمتابعة.', 'تسجيل الدخول'); document.body.classList.remove('admin'); go('panel'); }
+async function sessionExpired() { if (!me) return; token = null; me = null; GEN++; CACHE.clear(); INFL.clear(); await ask('انتهت الجلسة', 'لحماية البيانات تنتهي الجلسة بعد 6 ساعات. سجّل الدخول من جديد للمتابعة.', 'تسجيل الدخول'); document.body.classList.remove('admin'); go('panel'); }
 
 /* ===== رئيسية المشرف ===== */
 const daysSince = s => { const m = String(s || '').match(/^(\d{4})-(\d{2})-(\d{2})/); if (!m) return null; return Math.floor((Date.now() - Date.UTC(+m[1], +m[2] - 1, +m[3])) / 864e5); };
 async function dash() {
   $('#sv').innerHTML = '<div class="skel" style="height:70px"></div><div class="skel" style="height:70px"></div><div class="skel" style="height:110px"></div>';
   const hy = hijri(today()).split('-')[2], g = hijriYearRange(hy) || {}, adm = me.role === 'admin';
-  const d = await call_('adminHome', { year: hy, from: g.from, to: g.to }); setBadges(d.ord); BADGE_AT = Date.now();
+  const d = await cget('adminHome', { year: hy, from: g.from, to: g.to }); setBadges(d.ord); BADGE_AT = Date.now();
   const A = [], o = d.ord, diff = Math.round((d.bank.bal - d.balance) * 100) / 100, age = daysSince(d.bank.date), bk = daysSince(d.backup.last);
   const card = (lvl, ic, t, s, nav) => A.push('<button type="button" class="att ' + lvl + '" data-nav="' + nav + '">' + svg(ic) + '<span><b>' + t + '</b><small>' + s + '</small></span><em aria-hidden="true">‹</em></button>');
   if (!d.bank.date) card('warn', 'imp', 'لم يُرفع أي كشف حساب بعد', 'ارفع كشف الراجحي لتبدأ التسجيل', 'imp');
