@@ -174,6 +174,11 @@ body.admin .toast{bottom:calc(150px + env(safe-area-inset-bottom))}
 .hello{display:flex;justify-content:space-between;align-items:baseline;gap:8px;flex-wrap:wrap;margin-bottom:4px}.hello b{font:700 19px 'Noto Kufi Arabic',sans-serif}.hello span{color:var(--mut);font-size:14px}
 .st{font:600 15px 'Noto Kufi Arabic',sans-serif;color:var(--mut);margin:18px 0 8px}
 .atts{display:grid;gap:8px}
+.atth{display:flex;align-items:center;gap:10px;width:100%;margin:18px 0 10px;padding:10px 14px;border:1px solid var(--ln);border-radius:14px;background:var(--sf2);color:var(--ink);font:600 16px 'Noto Kufi Arabic',sans-serif;cursor:pointer;text-align:start}
+.atth span{flex:1}.atth svg{width:20px;height:20px;color:var(--mut);transition:transform .2s}.atth[aria-expanded=true] svg{transform:rotate(180deg)}
+.atth .cnt{font:700 13px 'Noto Kufi Arabic',sans-serif;font-style:normal;min-width:26px;height:26px;padding:0 8px;border-radius:13px;display:grid;place-items:center;color:#fff;background:var(--mut)}
+.atth .cnt.l2{background:var(--au)}.atth .cnt.l3{background:var(--bad)}
+.atts.hid{display:none}
 .att,.mrow{display:flex;align-items:center;gap:12px;width:100%;text-align:start;border:1px solid var(--ln);border-radius:16px;padding:12px 14px;background:var(--sf2);cursor:pointer;color:var(--ink);transition:transform .1s,box-shadow .2s}
 .att:hover,.mrow:hover{box-shadow:var(--sh)}.att:active,.mrow:active{transform:scale(.99)}
 .att>svg,.mrow>svg{width:40px;height:40px;padding:9px;border-radius:12px;flex:none;background:var(--soft-ok);color:var(--g2)}
@@ -250,9 +255,16 @@ function ask(title, msg, okText, danger) {
     d.showModal ? d.showModal() : (d.setAttribute('open', ''), 0);
   });
 }
+function askText(title, msg, val, ok) {
+  return new Promise(res => { const d = document.createElement('dialog'); d.className = 'dlg';
+    d.innerHTML = '<h3>' + esc(title) + '</h3><p>' + esc(msg) + '</p><input id="atx" style="margin-top:10px" value="' + esc(val || '') + '"><div class="btnrow"><button class="btn" value="ok">' + esc(ok || 'حفظ') + '</button><button class="btn alt" value="no">تراجع</button></div>';
+    document.body.appendChild(d); const fin = v => { d.close(); d.remove(); res(v); };
+    d.addEventListener('click', e => { const v = e.target.value; if (v === 'ok') fin(d.querySelector('#atx').value); else if (v === 'no' || e.target === d) fin(null); });
+    d.addEventListener('cancel', () => { d.remove(); res(null); }); d.showModal ? d.showModal() : d.setAttribute('open', ''); setTimeout(() => d.querySelector('#atx').focus(), 50); });
+}
 document.addEventListener('click', e => { const b = e.target.closest && e.target.closest('button'); if (b) { ACT = b; setTimeout(() => { if (ACT === b) ACT = null; }, 0); } }, true);
-const WRITE = { cancelDeposit: 'جارٍ الإلغاء…', backupNow: 'جارٍ النسخ…', exportData: 'جارٍ تجهيز ملف Excel…', exportReport: 'جارٍ الحفظ في Drive…', createOrder: 'جارٍ إصدار السند…', attachTransfer: 'جارٍ رفع الإيصال…', matchOrder: 'جارٍ المطابقة…', cancelOrder: 'جارٍ الإلغاء…', payOrderManual: 'جارٍ التسجيل…', getVoucher: 'جارٍ فتح السند…', login: 'جارٍ الدخول…', addDeposit: 'جارٍ الحفظ…', addPayment: 'جارٍ تسجيل الصرف…', saveBeneficiary: 'جارٍ الحفظ…', saveAllocation: 'جارٍ الحفظ…', addUser: 'جارٍ الإضافة…', resetCode: 'جارٍ الإنشاء…', saveSettings: 'جارٍ الحفظ…', getReceipt: 'جارٍ فتح السند…', publicReport: 'جارٍ إعداد التقرير…' };
-const DONE = { cancelDeposit: 'أُلغي سند القبض', backupNow: 'حُفظت النسخة الاحتياطية', attachTransfer: 'تم حفظ الإيصال', matchOrder: 'تمت المطابقة مع الكشف', cancelOrder: 'أُلغي سند الصرف', payOrderManual: 'سُجّل المصروف', addDeposit: 'تم حفظ الإيداع', addPayment: 'تم تسجيل الصرف', saveBeneficiary: 'تم حفظ المستفيد', saveAllocation: 'تم حفظ المقدّر والمحجوز', saveSettings: 'تم حفظ الإعدادات', addUser: 'تمت إضافة المستخدم', resetCode: 'تم إنشاء رمز جديد' };
+const WRITE = { cancelDeposit: 'جارٍ الإلغاء…', backupNow: 'جارٍ النسخ…', exportData: 'جارٍ تجهيز ملف Excel…', exportReport: 'جارٍ الحفظ في Drive…', createOrder: 'جارٍ إصدار السند…', attachTransfer: 'جارٍ رفع الإيصال…', matchOrder: 'جارٍ المطابقة…', cancelOrder: 'جارٍ الإلغاء…', payOrderManual: 'جارٍ التسجيل…', getVoucher: 'جارٍ فتح السند…', login: 'جارٍ الدخول…', addDeposit: 'جارٍ الحفظ…', addPayment: 'جارٍ تسجيل الصرف…', saveBeneficiary: 'جارٍ الحفظ…', saveAllocation: 'جارٍ الحفظ…', addUser: 'جارٍ الإضافة…', renameUser: 'جارٍ الحفظ…', resetCode: 'جارٍ الإنشاء…', saveSettings: 'جارٍ الحفظ…', getReceipt: 'جارٍ فتح السند…', publicReport: 'جارٍ إعداد التقرير…' };
+const DONE = { cancelDeposit: 'أُلغي سند القبض', backupNow: 'حُفظت النسخة الاحتياطية', attachTransfer: 'تم حفظ الإيصال', matchOrder: 'تمت المطابقة مع الكشف', cancelOrder: 'أُلغي سند الصرف', payOrderManual: 'سُجّل المصروف', addDeposit: 'تم حفظ الإيداع', addPayment: 'تم تسجيل الصرف', saveBeneficiary: 'تم حفظ المستفيد', saveAllocation: 'تم حفظ المقدّر والمحجوز', saveSettings: 'تم حفظ الإعدادات', addUser: 'تمت إضافة المستخدم', renameUser: 'تم تغيير الاسم', resetCode: 'تم إنشاء رمز جديد' };
 function toast(m, bad) {
   const t = document.createElement('div'); t.className = 'toast' + (bad ? ' bad' : ''); t.setAttribute('role', 'status'); t.textContent = m; document.body.appendChild(t);
   requestAnimationFrame(() => t.classList.add('show')); setTimeout(() => { t.classList.remove('show'); setTimeout(() => t.remove(), 300); }, 2800);
@@ -584,7 +596,9 @@ async function dash() {
   const hy = hijri(today()).split('-')[2], g = hijriYearRange(hy) || {}, adm = me.role === 'admin';
   const d = await cget('adminHome', { year: hy, from: g.from, to: g.to }); setBadges(d.ord); BADGE_AT = Date.now();
   const A = [], o = d.ord, diff = Math.round((d.bank.bal - d.balance) * 100) / 100, age = daysSince(d.bank.date), bk = daysSince(d.backup.last);
-  const card = (lvl, ic, t, s, nav) => A.push('<button type="button" class="att ' + lvl + '" data-nav="' + nav + '">' + svg(ic) + '<span><b>' + t + '</b><small>' + s + '</small></span><em aria-hidden="true">‹</em></button>');
+  const LV = { info: 1, warn: 2, bad: 3 }, BAD = []; let top = 0;
+  const card = (lvl, ic, t, s, nav) => { top = Math.max(top, LV[lvl]); if (lvl === 'bad') BAD.push(t.replace(/\d+/g, '#'));
+    A.push('<button type="button" class="att ' + lvl + '" data-nav="' + nav + '">' + svg(ic) + '<span><b>' + t + '</b><small>' + s + '</small></span><em aria-hidden="true">‹</em></button>'); };
   if (!d.bank.date) card('warn', 'imp', 'لم يُرفع أي كشف حساب بعد', 'ارفع كشف الراجحي لتبدأ التسجيل', 'imp');
   else {
     if (Math.abs(diff) > 0.005) card('warn', 'imp', 'فرق ' + nf(Math.abs(diff)) + ' ريال عن كشف البنك', 'رصيد البنك ' + nf(d.bank.bal) + ' — رصيد النظام ' + nf(d.balance), 'imp');
@@ -596,12 +610,17 @@ async function dash() {
   if (adm && d.noAlloc && d.bens) card('info', 'ben', d.noAlloc + ' مستفيد بلا مخصص لعام ' + hy + 'هـ', 'حدّد المقدّر والمحجوز بعد اجتماع المجلس', 'ben');
   if (adm && !d.backup.on) card('bad', 'settings', 'النسخ الاحتياطي اليومي متوقف', 'شغّل setup() من محرر Apps Script لتفعيله', 'settings');
   else if (adm && (bk === null || bk > 2)) card('bad', 'settings', bk === null ? 'لا توجد نسخة احتياطية بعد' : 'آخر نسخة احتياطية قبل ' + bk + ' أيام', 'خذ نسخة الآن من الإعدادات', 'settings');
+  let open = false, seen = []; try { open = localStorage.getItem('fund-att-open') === '1'; seen = JSON.parse(localStorage.getItem('fund-att-seen') || '[]'); } catch (e) { }
+  if (BAD.some(k => seen.indexOf(k) < 0)) open = true; // تنبيه عاجل جديد يُفتح تلقائيًا مرة واحدة
+  try { localStorage.setItem('fund-att-seen', JSON.stringify(BAD)); } catch (e) { }
   $('#sv').innerHTML = '<div class="hello"><b>أهلًا ' + esc(me.name) + '</b><span>' + hTxt(hijri(today())) + '</span></div>' +
-    '<h3 class="st">تحتاج انتباهك</h3>' + (A.length ? '<div class="atts">' + A.join('') + '</div>' : '<div class="recon ok">✓ كل شيء محدّث، لا يوجد ما ينتظرك.</div>') +
+    (A.length ? '<button type="button" class="atth" id="atth" aria-expanded="' + open + '" aria-controls="atts"><span>تحتاج انتباهك</span><i class="cnt l' + top + '">' + A.length + '</i><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg></button>' +
+      '<div class="atts' + (open ? '' : ' hid') + '" id="atts">' + A.join('') + '</div>' : '<div class="recon ok">✓ كل شيء محدّث، لا يوجد ما ينتظرك.</div>') +
     '<h3 class="st">عام ' + hy + 'هـ حتى الآن</h3><div class="mini"><div class="ok"><span>الوارد</span><b>' + nf(d.year.income) + '</b></div><div class="au"><span>المصروف</span><b>' + nf(d.year.out) + '</b></div><div><span>رصيد الصندوق</span><b>' + nf(d.balance) + '</b></div></div>' +
-    '<div class="btnrow"><button class="btn" data-nav="imp">رفع كشف</button><button class="btn alt" data-nav="add">إيداع يدوي</button>' + (adm ? '<button class="btn alt" data-nav="ben">سند صرف</button>' : '') + '</div>' +
     '<h3 class="st">آخر العمليات</h3>' + (d.recent.length ? '<div class="rec">' + d.recent.map(x => '<div><i class="' + x.k + '">' + svg(x.k === 'in' ? 'in' : 'out') + '</i><span><b>' + esc(x.label || (x.k === 'in' ? 'إيداع' : 'صرف')) + '</b><small>' + gTxt(x.date) + '</small></span><em class="' + x.k + '">' + (x.k === 'in' ? '+' : '−') + nf(x.amount) + '</em></div>').join('') + '</div>' : '<p class="lbl">لا توجد عمليات بعد.</p>');
 }
+document.addEventListener('click', e => { const h = e.target.closest && e.target.closest('#atth'); if (!h) return;
+  const on = h.getAttribute('aria-expanded') !== 'true'; h.setAttribute('aria-expanded', on); $('#atts').classList.toggle('hid', !on); try { localStorage.setItem('fund-att-open', on ? '1' : '0'); } catch (x) { } });
 async function moreMenu() {
   const it = (k, t, s) => k === 'public' || can(k) ? '<button type="button" class="mrow" data-nav="' + k + '">' + svg(k) + '<span><b>' + t + '</b><small>' + s + '</small></span><em aria-hidden="true">‹</em></button>' : '';
   $('#sv').innerHTML = '<div class="mlist">' + it('rep', 'التقارير', 'التقرير السنوي، والطباعة، وتنزيل Excel') + it('users', 'المستخدمون', 'إضافة مستخدم وتغيير الرموز') + it('settings', 'الإعدادات', 'اسم الصندوق، والسندات، والرصيد المرحّل، والنسخ الاحتياطي') + it('public', 'الصفحة العامة', 'ما يراه الزوار بدون دخول') + '</div>';
@@ -677,10 +696,13 @@ async function add(pf) {
 
 async function users() {
   const us = await call('listUsers');
-  $('#sv').innerHTML = us.map(u => '<div style="display:flex;justify-content:space-between;align-items:center;padding:6px 0"><span>' + esc(u.name) + ' <span class="tag">' + ROLE[u.role] + '</span></span><button class="btn alt sm" data-id="' + esc(u.id) + '" data-n="' + esc(u.name) + '">رمز جديد</button></div>').join('') +
+  $('#sv').innerHTML = us.map(u => '<div style="display:flex;justify-content:space-between;align-items:center;padding:6px 0"><span>' + esc(u.name) + ' <span class="tag">' + ROLE[u.role] + '</span></span><span style="display:flex;gap:6px"><button class="btn alt sm" data-rn="' + esc(u.id) + '" data-n="' + esc(u.name) + '">تغيير الاسم</button><button class="btn alt sm" data-id="' + esc(u.id) + '" data-n="' + esc(u.name) + '">رمز جديد</button></span></div>').join('') +
     '<h3 style="font-family:Noto Kufi Arabic,sans-serif">إضافة مستخدم</h3><label>الاسم</label><input id="nn"><label>الدور</label><select id="nr"><option value="entry">مدخل بيانات</option><option value="admin">مدير</option></select><p><button class="btn" id="nadd">إضافة</button></p><div id="nres"></div>';
   const code = (n, c) => $('#nres').innerHTML = '<div class="msg good">الرمز لـ ' + esc(n) + ': <b>' + esc(c) + '</b><br>سلّمه له الآن، لن يظهر مرة أخرى.</div>';
   $('#nadd').onclick = async () => { try { const r = await call('addUser', { name: $('#nn').value, role: $('#nr').value }); code($('#nn').value, r.code); } catch (e) { $('#nres').innerHTML = '<div class="msg">' + esc(e.message) + '</div>'; } };
+  $('#sv').querySelectorAll('button[data-rn]').forEach(b => b.onclick = async () => {
+    const v = await askText('تغيير اسم المستخدم', 'الاسم الجديد هو الذي يُكتب عند تسجيل الدخول، والرمز يبقى كما هو.', b.dataset.n, 'حفظ الاسم'); if (v === null || v.trim() === b.dataset.n) return;
+    try { await call('renameUser', { id: b.dataset.rn, name: v }); if (me && me.name === b.dataset.n) { me.name = v.trim(); enterAdmin(); sub('users'); } else users().catch(fail); } catch (e) { } });
   $('#sv').querySelectorAll('button[data-id]').forEach(b => b.onclick = async () => { try { const r = await call('resetCode', { id: b.dataset.id }); code(b.dataset.n, r.code); } catch (e) { $('#nres').innerHTML = '<div class="msg">' + esc(e.message) + '</div>'; } });
 }
 function buildTextBands_(items, tol) {
