@@ -174,6 +174,11 @@ body.admin .toast{bottom:calc(150px + env(safe-area-inset-bottom))}
 .hello{display:flex;justify-content:space-between;align-items:baseline;gap:8px;flex-wrap:wrap;margin-bottom:4px}.hello b{font:700 19px 'Noto Kufi Arabic',sans-serif}.hello span{color:var(--mut);font-size:14px}
 .st{font:600 15px 'Noto Kufi Arabic',sans-serif;color:var(--mut);margin:18px 0 8px}
 .atts{display:grid;gap:8px}
+.ybar{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;margin-bottom:14px}
+.yfld{display:flex;align-items:center;gap:8px}.yfld label{margin:0;white-space:nowrap}.yfld select{width:auto;min-width:150px;min-height:44px;padding-block:6px}
+body.admin #bnav,body.admin #fab{transform:translateZ(0);will-change:transform;backface-visibility:hidden}
+body.admin #fab:not(.hid){transition:width .22s ease,padding .22s ease,border-radius .22s ease,opacity .2s}
+body.admin #fab.mini{padding:0;width:54px;justify-content:center;border-radius:50%}body.admin #fab.mini span{display:none}
 .atth{display:flex;align-items:center;gap:10px;width:100%;margin:18px 0 10px;padding:10px 14px;border:1px solid var(--ln);border-radius:14px;background:var(--sf2);color:var(--ink);font:600 16px 'Noto Kufi Arabic',sans-serif;cursor:pointer;text-align:start}
 .atth span{flex:1}.atth svg{width:20px;height:20px;color:var(--mut);transition:transform .2s}.atth[aria-expanded=true] svg{transform:rotate(180deg)}
 .atth .cnt{font:700 13px 'Noto Kufi Arabic',sans-serif;font-style:normal;min-width:26px;height:26px;padding:0 8px;border-radius:13px;display:grid;place-items:center;color:#fff;background:var(--mut)}
@@ -452,6 +457,9 @@ function hijriYearRange(y) {
   return { from: iso(s), to: iso(new Date(e.getTime() - 864e5)) };
 }
 let REP = null;
+/** قائمة السنوات الهجرية: السنة القادمة والحالية وما قبلها */
+function ySel(sel) { const cur = Number(hijri(today()).split('-')[2]), o = []; sel = Number(sel) || cur;
+  for (let y = cur + 1; y >= Math.min(cur - 6, sel); y--) o.push('<option value="' + y + '"' + (y === sel ? ' selected' : '') + '>' + y + ' هـ' + (y === cur ? ' (الحالية)' : '') + '</option>'); return o.join(''); }
 function yearOpts(kind, cur) {
   const out = []; for (let y = cur + (kind === 'g' ? 0 : 0); y >= cur - 8; y--) out.push('<option value="' + y + '"' + (y === cur ? ' selected' : '') + '>' + y + (kind === 'g' ? ' م' : ' هـ') + '</option>');
   return out.join('');
@@ -566,9 +574,13 @@ function sub(n, pf, noPush, soft) {
   $('#view').innerHTML = (GRP[g] ? '<div class="sub gchips" role="tablist">' + GRP[g].filter(can).map(k => '<button type="button" role="tab" data-nav="' + k + '" class="' + (k === n ? 'on' : '') + '" aria-selected="' + (k === n) + '">' + SEC[k].t + '</button>').join('') + '</div>' : '') + '<div id="sv"></div>';
   ({ dash, imp, add, ben, ops, list, users, settings, more: moreMenu })[n](pf).catch(e => { if ($('#sv')) $('#sv').innerHTML = '<div class="msg">' + esc(e.message) + '</div>'; });
 }
+/* زر الإضافة يصغر إلى دائرة عند النزول حتى لا يغطي المحتوى، ويعود عند الصعود */
+let FABY = 0, FABT = 0;
+window.addEventListener('scroll', () => { if (FABT) return; FABT = requestAnimationFrame(() => { FABT = 0; const y = window.scrollY, f = $('#fab'); if (!f) return;
+  if (y < 60) f.classList.remove('mini'); else if (y > FABY + 6) f.classList.add('mini'); else if (y < FABY - 6) f.classList.remove('mini'); FABY = y; }); }, { passive: true });
 function setFab(n) {
   const adm = me && me.role === 'admin', F = { imp: ['إيداع يدوي', () => sub('add')], list: ['إيداع يدوي', () => sub('add')], ben: adm ? ['سند صرف', pickBen] : null, ops: adm ? ['مصروف إداري', () => OPCATS && $('#fm') && opForm(OPCATS)] : null }[n];
-  const b = $('#fab'); b.classList.toggle('hid', !F); if (!F) return; b.querySelector('span').textContent = F[0]; b.setAttribute('aria-label', F[0]); b.onclick = F[1];
+  const b = $('#fab'); b.classList.remove('mini'); b.classList.toggle('hid', !F); if (!F) return; b.querySelector('span').textContent = F[0]; b.setAttribute('aria-label', F[0]); b.onclick = F[1];
 }
 function pickBen() {
   if (!BEN.length) return toast('أضف مستفيدًا أولًا', true);
@@ -911,7 +923,7 @@ async function ops() {
   OPY = OPY || hijri(today()).split('-')[2]; const adm = me.role === 'admin', g = hijriYearRange(OPY) || {};
   const r = await call('listOperating', Object.assign({ year: OPY }, g)), tot = r.orders.filter(o => o.status === 'مطابق').reduce((a, o) => a + o.amount, 0) + r.fees.reduce((a, f) => a + f.amount, 0);
   const ST = { 'معتمد': 'بانتظار التحويل', 'حُوِّل': 'حُوِّل، بانتظار الكشف', 'مطابق': 'مطابق للكشف', 'ملغى': 'ملغى' };
-  $('#sv').innerHTML = '<div class="grid"><div><label>السنة الهجرية</label><input id="oy" value="' + esc(OPY) + '" inputmode="numeric"></div><div style="align-self:end"><button class="btn alt" id="oyb">عرض</button> ' +
+  $('#sv').innerHTML = '<div class="ybar"><div class="yfld"><label for="oy">السنة</label><select id="oy" aria-label="السنة الهجرية">' + ySel(OPY) + '</select></div><div>' +
     (adm ? '<button class="btn" id="oadd">+ مصروف إداري</button>' : '') + '</div></div><div class="mini" style="margin:14px 0"><div><span>المصروف الإداري في ' + esc(OPY) + 'هـ</span><b>' + nf(tot) + '</b></div><div class="au"><span>سندات مفتوحة</span><b>' + r.orders.filter(o => o.status === 'معتمد' || o.status === 'حُوِّل').length + '</b></div></div><div id="fm"></div>' +
     (r.orders.length ? r.orders.map(o => '<div class="card" style="margin-bottom:10px" data-o="' + esc(o.id) + '"><div style="display:flex;justify-content:space-between;gap:8px"><b>' + esc(o.payee) + '</b><span class="tag">' + esc(o.cat) + '</span></div>' +
       '<div class="lbl">' + esc(o.date) + (o.note ? ' — ' + esc(o.note) : '') + '</div><div class="ord"><span>سند صرف <b>' + o.num + '</b> — ' + R(o.amount) + ' <span class="tag st' + (o.status === 'مطابق' ? 'ok' : o.status === 'ملغى' ? 'no' : '') + '">' + esc(ST[o.status] || o.status) + '</span></span><span>' +
@@ -919,7 +931,7 @@ async function ops() {
       (o.url ? ' <a class="btn alt sm" href="' + esc(o.url) + '" target="_blank" rel="noopener">المرفق</a>' : '') +
       (adm && (o.status === 'معتمد' || o.status === 'حُوِّل') ? ' <button class="btn alt sm" data-act="man">صُرف دون كشف</button> <button class="btn alt sm" data-act="cx">إلغاء</button>' : '') + '</span></div></div>').join('') : '<p class="lbl">لا توجد سندات مصروفات إدارية في هذه السنة.</p>') +
     (r.fees.length ? '<h3 style="font-family:Noto Kufi Arabic,sans-serif;font-weight:600;font-size:16px">رسوم بنكية من الكشف</h3><div class="tw"><table><tr><th>التاريخ</th><th>البند</th><th>المبلغ</th></tr>' + r.fees.map(f => '<tr><td>' + esc(f.date) + '</td><td>' + esc(f.cat) + '</td><td>' + nf(f.amount) + '</td></tr>').join('') + '</table></div>' : '');
-  $('#oyb').onclick = () => { OPY = $('#oy').value.trim(); ops().catch(e => $('#sv').innerHTML = '<div class="msg">' + esc(e.message) + '</div>'); };
+  $('#oy').onchange = () => { OPY = $('#oy').value; ops().catch(e => $('#sv').innerHTML = '<div class="msg">' + esc(e.message) + '</div>'); };
   OPCATS = r.cats; if (adm) $('#oadd').onclick = () => opForm(r.cats);
   $('#sv').onclick = e => { const a = e.target.dataset.act; if (!a) return; const id = e.target.closest('[data-o]').dataset.o, o = r.orders.find(x => x.id === id);
     if (a === 'vo') voucher(id); else if (a === 'att') attachForm(null, o, ops); else if (a === 'cx') cancelForm(o, ops); else if (a === 'man') manualForm(o, ops); };
@@ -956,7 +968,7 @@ async function ben() {
   BEN = await call('listBeneficiaries', { year: BY });
   const t = BEN.reduce((a, b) => ({ e: a.e + b.estimated, r: a.r + b.reserved, p: a.p + b.paid, q: a.q + b.pending }), { e: 0, r: 0, p: 0, q: 0 });
   const ST = { 'معتمد': 'بانتظار التحويل', 'حُوِّل': 'حُوِّل، بانتظار الكشف', 'مطابق': 'مطابق للكشف', 'ملغى': 'ملغى' };
-  $('#sv').innerHTML = '<div class="grid"><div><label>السنة الهجرية</label><input id="by" value="' + esc(BY) + '" inputmode="numeric"></div><div style="align-self:end"><button class="btn alt" id="byb">عرض</button> ' +
+  $('#sv').innerHTML = '<div class="ybar"><div class="yfld"><label for="by">السنة</label><select id="by" aria-label="السنة الهجرية">' + ySel(BY) + '</select></div><div>' +
     (adm ? '<button class="btn" id="badd">+ مستفيد جديد</button>' : '') + '</div></div>' +
     '<div class="mini" style="margin:14px 0"><div><span>المقدّر</span><b>' + nf(t.e) + '</b></div><div><span>المحجوز</span><b>' + nf(t.r) + '</b></div><div><span>المصروف</span><b>' + nf(t.p) + '</b></div><div class="au"><span>في سندات معلّقة</span><b>' + nf(t.q) + '</b></div><div class="ok"><span>المتاح للصرف</span><b>' + nf(t.r - t.p - t.q) + '</b></div></div>' +
     '<input id="bq" placeholder="ابحث برقم المستفيد أو اسمه" style="margin-bottom:10px"><div id="fm"></div>' +
@@ -973,7 +985,7 @@ async function ben() {
         (adm && (o.status === 'معتمد' || o.status === 'حُوِّل') ? ' <button class="btn alt sm" data-act="man">صُرف دون كشف</button> <button class="btn alt sm" data-act="cx">إلغاء</button>' : '') + '</span></div>').join('') + '</div>' : '') +
       (adm ? '<button class="btn sm" data-act="ord">+ سند صرف</button> <button class="btn alt sm" data-act="alloc">المقدّر والمحجوز</button> <button class="btn alt sm" data-act="edit">تعديل البيانات</button>' : '') + '</div>'; }).join('')
       : '<p class="lbl">لا يوجد مستفيدون بعد.' + (adm ? ' ابدأ بـ«مستفيد جديد».' : '') + '</p>');
-  $('#byb').onclick = () => { BY = $('#by').value.trim(); ben().catch(e => $('#sv').innerHTML = '<div class="msg">' + esc(e.message) + '</div>'); };
+  $('#by').onchange = () => { BY = $('#by').value; ben().catch(e => $('#sv').innerHTML = '<div class="msg">' + esc(e.message) + '</div>'); };
   $('#bq').oninput = () => { const q = $('#bq').value.trim().toLowerCase(); document.querySelectorAll('#sv .card[data-id]').forEach(x => x.classList.toggle('hid', !!q && x.dataset.q.indexOf(q) < 0)); };
   if (adm) $('#badd').onclick = () => benForm();
   $('#sv').onclick = e => { const a = e.target.dataset.act; if (!a) return; const b = BEN.find(x => x.id === e.target.closest('[data-id]').dataset.id), oe = e.target.closest('[data-o]'), o = oe && b.orders.find(x => x.id === oe.dataset.o);
