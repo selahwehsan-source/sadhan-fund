@@ -279,6 +279,12 @@ function busyBtn(b, label) { if (!b) return () => {}; const old = b.innerHTML; b
 /* ===== السرعة: لقطة عامة ثابتة + تحميل لوحة المشرف دفعة واحدة + ذاكرة مؤقتة تتحدّث بهدوء ===== */
 const READS = { publicSummary: 1, publicReport: 1, dashboard: 1, listDeposits: 1, listBeneficiaries: 1, openOrders: 1, listOperating: 1, internalReport: 1, adminHome: 1, getSettings: 1, listUsers: 1, getReceipt: 1, getVoucher: 1 };
 const NOINV = { login: 1, exportData: 1, exportReport: 1, backupNow: 1, publishNow: 1 };
+/* المكتبات من مستودع الموقع نفسه (لا اعتماد على جهة خارجية)، وفي نسخة Apps Script من cdnjs بنفس الإصدار */
+const LIB = API_URL ? { xlsx: 'lib/xlsx.full.min.js', pdf: 'lib/pdf.min.js', worker: 'lib/pdf.worker.min.js' }
+  : { xlsx: 'https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js', pdf: 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js', worker: 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js' };
+/** الإيداعات تُجلب من بداية السنة الهجرية السابقة فقط، والأقدم عند الطلب */
+const depFrom = () => (hijriYearRange(Number(hijri(today()).split('-')[2]) - 1) || {}).from || '';
+let LISTALL = false;
 const SNAP_URL = API_URL ? 'https://raw.githubusercontent.com/selahwehsan-source/sadhan-fund/data/public.json' : '';
 const CACHE = new Map(), INFL = new Map(); let GEN = 0, SYNCP = null, SYNC_AT = 0;
 const FRESH_MS = 30000; // خلال هذه المدة تُعرض البيانات المخزّنة بلا أي طلب
@@ -313,7 +319,7 @@ function fetchStore(a, p, k) {
 /** الشاشات التي تحتاجها لوحة المشرف عادة — تُجلب كلها في طلب واحد */
 function stdItems() {
   if (!me) return []; const y = hijri(today()).split('-')[2], g = hijriYearRange(y) || {}, oy = OPY || y, ttl = { title: 'التقرير السنوي لعام ' + y + 'هـ' };
-  const it = [['adminHome', { year: y, from: g.from, to: g.to }], ['adminHome', { light: true }], ['listDeposits', {}], ['dashboard', {}], ['listBeneficiaries', { year: BY || y }],
+  const it = [['adminHome', { year: y, from: g.from, to: g.to }], ['adminHome', { light: true }], ['listDeposits', { from: depFrom() }], ['dashboard', {}], ['listBeneficiaries', { year: BY || y }],
     ['listOperating', Object.assign({ year: oy }, hijriYearRange(oy) || {})], ['publicReport', Object.assign({}, g, ttl)], ['internalReport', Object.assign({}, g, ttl)], ['publicSummary', {}]];
   if (me.role === 'admin') it.push(['getSettings', {}], ['listUsers', {}]);
   return it;
@@ -423,7 +429,7 @@ async function home() {
 let _xP = null;
 function loadXlsx() {
   if (window.XLSX) return Promise.resolve(); if (_xP) return _xP;
-  _xP = new Promise((res, rej) => { const s = document.createElement('script'); s.src = 'https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js';
+  _xP = new Promise((res, rej) => { const s = document.createElement('script'); s.src = LIB.xlsx;
     s.onload = res; s.onerror = () => { _xP = null; rej(new Error('تعذّر تحميل مكتبة Excel.')); }; document.head.appendChild(s); });
   return _xP;
 }
@@ -551,7 +557,7 @@ function enterAdmin(fresh) {
   $('#view').innerHTML = '<div class="skel" style="height:70px"></div><div class="skel" style="height:70px"></div><div class="skel" style="height:110px"></div>';
   sync(false).finally(() => { if (me) sub(n); });
 }
-function exitAdmin() { token = null; me = null; GEN++; CACHE.clear(); INFL.clear(); SYNCP = null; SYNC_AT = 0; document.body.classList.remove('admin'); go('home'); }
+function exitAdmin() { token = null; me = null; LISTALL = false; GEN++; CACHE.clear(); INFL.clear(); SYNCP = null; SYNC_AT = 0; document.body.classList.remove('admin'); go('home'); }
 async function logout() { if (await ask('تسجيل الخروج؟', 'ستحتاج إلى اسم المستخدم وكلمة المرور للدخول مرة أخرى.', 'خروج', true)) { exitAdmin(); toast('تم تسجيل الخروج'); } }
 $('#out2').onclick = logout;
 document.addEventListener('click', e => {
@@ -640,8 +646,9 @@ async function moreMenu() {
 
 async function list() {
   $('#sv').innerHTML = '<p class="lbl"><span class="spin"></span>جارٍ التحميل…</p>';
-  const ds = await call('listDeposits');
-  if (!ds.length) return $('#sv').innerHTML = '<p>لا توجد إيداعات بعد.</p>';
+  const r0 = await call('listDeposits', LISTALL ? {} : { from: depFrom() }), ds = Array.isArray(r0) ? r0 : r0.list, older = Array.isArray(r0) ? 0 : r0.older;
+  const more = older ? '<div class="card" style="text-align:center;margin-top:12px"><div class="lbl" style="margin-bottom:8px">المعروض من ' + hTxt(hijri(r0.from)) + '، ويوجد ' + older + ' إيداعًا أقدم</div><button class="btn alt" id="dall">عرض الإيداعات الأقدم</button></div>' : '';
+  if (!ds.length) { $('#sv').innerHTML = '<p>لا توجد إيداعات في هذه الفترة.</p>' + more; if ($('#dall')) $('#dall').onclick = () => { LISTALL = true; list().catch(fail); }; return; }
   $('#sv').innerHTML = '<input id="dq" placeholder="ابحث باسم المودع أو المتبرع أو رقم السند" style="margin-bottom:10px">' + ds.map(d => '<details data-q="' + esc((d.depositor + ' ' + d.receipt + ' ' + d.lines.map(l => l.name + ' ' + (l.real || '')).join(' ')).toLowerCase()) + '"><summary><span><b>' + esc(d.depositor) + '</b><br><span class="lbl">' + hTxt(d.hijri) + ' — ' + gTxt(d.date) + ' — رقم السند ' + esc(d.receipt) +
     '</span></span><b class="amt"' + (d.status === 'ملغى' ? ' style="text-decoration:line-through;color:var(--mut)"' : '') + '>' + R(d.amount) + '</b></summary>' + (d.status === 'ملغى' ? '<div class="msg" style="margin:6px 0">سند ملغى — ' + esc(d.reason) + '</div>' : '') +
     d.lines.map(l => '<div style="display:flex;justify-content:space-between;gap:8px;padding:4px 0"><span>' + esc(l.name) + (l.real ? ' <span class="lbl">(' + esc(l.real) + ')</span>' : '') +
@@ -649,6 +656,7 @@ async function list() {
       '</span><span><span class="tag">' + esc(l.type) + '</span> ' + R(l.amount) + '</span></div>').join('') +
     (d.status === 'ملغى' ? '' : '<div class="lbl">رصيد الصندوق بعد الإيداع: ' + R(d.balance) + '</div>') + '<button class="btn alt sm" data-r="' + esc(d.receipt) + '">عرض السند</button>' +
     (me.role === 'admin' && d.status !== 'ملغى' ? ' <button class="btn alt sm" data-cx="' + esc(d.receipt) + '" style="color:var(--bad)">إلغاء السند</button><div class="cxf"></div>' : '') + '</details>').join('');
+  if (more) { $('#sv').insertAdjacentHTML('beforeend', more); $('#dall').onclick = () => { LISTALL = true; list().catch(fail); }; }
   $('#sv').onclick = async e => {
     if (e.target.dataset.r) return receipt(e.target.dataset.r, () => sub('list'));
     const cx = e.target.dataset.cx; if (cx) { const box = e.target.parentNode.querySelector('.cxf');
@@ -786,8 +794,8 @@ function tafqeet(n) {
 let _pdfP = null;
 function loadPdfJs() {
   if (window.pdfjsLib) return Promise.resolve(); if (_pdfP) return _pdfP;
-  _pdfP = new Promise((res, rej) => { const s = document.createElement('script'); s.src = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js';
-    s.onload = () => { pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js'; res(); };
+  _pdfP = new Promise((res, rej) => { const s = document.createElement('script'); s.src = LIB.pdf;
+    s.onload = () => { let wk = LIB.worker; try { wk = new URL(LIB.worker, location.href).href; } catch (e) { } pdfjsLib.GlobalWorkerOptions.workerSrc = wk; res(); };
     s.onerror = () => { _pdfP = null; rej(new Error('تعذر تحميل مكتبة قراءة PDF. تحقق من الإنترنت.')); }; document.head.appendChild(s); });
   return _pdfP;
 }
