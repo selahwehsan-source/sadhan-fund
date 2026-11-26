@@ -278,9 +278,9 @@ function askText(title, msg, val, ok) {
     d.addEventListener('cancel', () => { d.remove(); res(null); }); d.showModal ? d.showModal() : d.setAttribute('open', ''); setTimeout(() => d.querySelector('#atx').focus(), 50); });
 }
 document.addEventListener('click', e => { const b = e.target.closest && e.target.closest('button'); if (b) { ACT = b; setTimeout(() => { if (ACT === b) ACT = null; }, 0); } }, true);
-const WRITE = { exportAll: 'جارٍ تجهيز ملف Excel…', yearReceipts: 'جارٍ تجهيز السندات…', yearVouchers: 'جارٍ تجهيز السندات…', setUser: 'جارٍ الحفظ…', cancelDeposit: 'جارٍ الإلغاء…', backupNow: 'جارٍ النسخ…', exportData: 'جارٍ تجهيز ملف Excel…', exportReport: 'جارٍ الحفظ في Drive…', createOrder: 'جارٍ إصدار السند…', attachTransfer: 'جارٍ رفع الإيصال…', matchOrder: 'جارٍ المطابقة…', cancelOrder: 'جارٍ الإلغاء…', payOrderManual: 'جارٍ التسجيل…', getVoucher: 'جارٍ فتح السند…', login: 'جارٍ الدخول…', addDeposit: 'جارٍ الحفظ…', addPayment: 'جارٍ تسجيل الصرف…', saveBeneficiary: 'جارٍ الحفظ…', saveAllocation: 'جارٍ الحفظ…', addUser: 'جارٍ الإضافة…', renameUser: 'جارٍ الحفظ…', resetCode: 'جارٍ الإنشاء…', saveSettings: 'جارٍ الحفظ…', getReceipt: 'جارٍ فتح السند…', publicReport: 'جارٍ إعداد التقرير…' };
+const WRITE = { payFromStatement: 'جارٍ التسجيل…', unmatch: 'جارٍ فك المطابقة…', exportAll: 'جارٍ تجهيز ملف Excel…', yearReceipts: 'جارٍ تجهيز السندات…', yearVouchers: 'جارٍ تجهيز السندات…', setUser: 'جارٍ الحفظ…', cancelDeposit: 'جارٍ الإلغاء…', backupNow: 'جارٍ النسخ…', exportData: 'جارٍ تجهيز ملف Excel…', exportReport: 'جارٍ الحفظ في Drive…', createOrder: 'جارٍ إصدار السند…', attachTransfer: 'جارٍ رفع الإيصال…', matchOrder: 'جارٍ المطابقة…', cancelOrder: 'جارٍ الإلغاء…', payOrderManual: 'جارٍ التسجيل…', getVoucher: 'جارٍ فتح السند…', login: 'جارٍ الدخول…', addDeposit: 'جارٍ الحفظ…', addPayment: 'جارٍ تسجيل الصرف…', saveBeneficiary: 'جارٍ الحفظ…', saveAllocation: 'جارٍ الحفظ…', addUser: 'جارٍ الإضافة…', renameUser: 'جارٍ الحفظ…', resetCode: 'جارٍ الإنشاء…', saveSettings: 'جارٍ الحفظ…', getReceipt: 'جارٍ فتح السند…', publicReport: 'جارٍ إعداد التقرير…' };
 WRITE.getReceipt = 'جارٍ فتح السند…';
-const DONE = { cancelDeposit: 'أُلغي سند القبض', backupNow: 'حُفظت النسخة الاحتياطية', attachTransfer: 'تم حفظ الإيصال', matchOrder: 'تمت المطابقة مع الكشف', cancelOrder: 'أُلغي سند الصرف', payOrderManual: 'سُجّل المصروف', addDeposit: 'تم حفظ الإيداع', addPayment: 'تم تسجيل الصرف', saveBeneficiary: 'تم حفظ المستفيد', saveAllocation: 'تم حفظ المقدّر والمحجوز', saveSettings: 'تم حفظ الإعدادات', addUser: 'تمت إضافة المستخدم', setUser: 'تم حفظ المستخدم', renameUser: 'تم تغيير الاسم', resetCode: 'تم إنشاء رمز جديد' };
+const DONE = { cancelDeposit: 'أُلغي سند القبض', backupNow: 'حُفظت النسخة الاحتياطية', attachTransfer: 'تم حفظ الإيصال', matchOrder: 'تمت المطابقة مع الكشف', cancelOrder: 'أُلغي سند الصرف', payOrderManual: 'سُجّل المصروف', addDeposit: 'تم حفظ الإيداع', addPayment: 'تم تسجيل الصرف', saveBeneficiary: 'تم حفظ المستفيد', saveAllocation: 'تم حفظ المقدّر والمحجوز', saveSettings: 'تم حفظ الإعدادات', unmatch: 'فُكّت المطابقة', addUser: 'تمت إضافة المستخدم', setUser: 'تم حفظ المستخدم', renameUser: 'تم تغيير الاسم', resetCode: 'تم إنشاء رمز جديد' };
 function toast(m, bad) {
   const t = document.createElement('div'); t.className = 'toast' + (bad ? ' bad' : ''); t.setAttribute('role', 'status'); t.textContent = m; document.body.appendChild(t);
   requestAnimationFrame(() => t.classList.add('show')); setTimeout(() => { t.classList.remove('show'); setTimeout(() => t.remove(), 300); }, 2800);
@@ -650,7 +650,7 @@ let FABY = 0, FABT = 0;
 window.addEventListener('scroll', () => { if (FABT) return; FABT = requestAnimationFrame(() => { FABT = 0; const y = window.scrollY, f = $('#fab'); if (!f) return;
   if (y < 60) f.classList.remove('mini'); else if (y > FABY + 6) f.classList.add('mini'); else if (y < FABY - 6) f.classList.remove('mini'); FABY = y; }); }, { passive: true });
 function setFab(n) {
-  const adm = me && me.role === 'admin', F = RO() ? null : { imp: ['إيداع يدوي', () => sub('add')], list: ['إيداع يدوي', () => sub('add')], ben: adm ? ['سند صرف', pickBen] : null, ops: adm ? ['مصروف إداري', () => OPCATS && $('#fm') && opForm(OPCATS)] : null }[n];
+  const adm = me && me.role === 'admin', F = RO() ? null : { imp: ['إيداع يدوي', () => sub('add')], list: ['إيداع يدوي', () => sub('add')], ops: adm ? ['مصروف إداري', () => OPCATS && $('#fm') && opForm(OPCATS)] : null }[n];
   const b = $('#fab'); b.classList.remove('mini'); b.classList.toggle('hid', !F); if (!F) return; b.querySelector('span').textContent = F[0]; b.setAttribute('aria-label', F[0]); b.onclick = F[1];
 }
 function pickBen() {
@@ -688,7 +688,7 @@ async function dash() {
     if (Math.abs(diff) > 0.005) card('warn', 'imp', 'فرق ' + nf(Math.abs(diff)) + ' ريال عن كشف البنك', 'رصيد البنك ' + nf(d.bank.bal) + ' — رصيد النظام ' + nf(d.balance), 'imp');
     if (age !== null && age >= 14) card('info', 'imp', 'آخر كشف مرفوع قبل ' + age + ' يومًا', 'ارفع كشف الفترة الأخيرة', 'imp');
   }
-  if (o.appr.n) card('warn', 'ben', o.appr.n + ' سند صرف بانتظار التحويل', 'بمبلغ ' + nf(o.appr.amt) + ' ريال للمستفيدين', 'ben');
+  if (o.appr.n) card('warn', 'ben', o.appr.n + ' سند صرف صادر مسبقًا لم يُطابق', 'بمبلغ ' + nf(o.appr.amt) + ' ريال — يُطابق عند رفع الكشف أو يُلغى', 'ben');
   if (o.apprOp.n) card('warn', 'ops', o.apprOp.n + ' مصروف إداري بانتظار التحويل', 'بمبلغ ' + nf(o.apprOp.amt) + ' ريال', 'ops');
   if (o.sent.n) card('info', 'list', o.sent.n + ' سند حُوِّل ولم يُطابق مع الكشف', 'ستُطابق عند رفع الكشف التالي', 'imp');
   if (adm && d.noAlloc && d.bens) card('info', 'ben', d.noAlloc + ' مستفيد بلا مخصص لعام ' + hy + 'هـ', 'حدّد المقدّر والمحجوز بعد اجتماع المجلس', 'ben');
@@ -911,43 +911,97 @@ async function imp() {
     try {
       const r = await readPdf(f);
       if (!r.deposits.length && !r.withdrawals.length) throw new Error('لم أتعرف على أي عملية في الملف. تأكد أنه كشف حساب من الراجحي.');
-      const c = await call('importCheck', { items: r.deposits.concat(r.withdrawals).map(d => ({ key: d.key, acct7: d.acct7 })), closing: r.closing });
-      IMP = { orders: c.orders || [], wrows: r.withdrawals.filter(d => c.done.indexOf(d.key) < 0), rows: r.deposits.filter(d => c.done.indexOf(d.key) < 0), done: c.done.length, wd: r.withdrawals.length, names: c.names, total: r.deposits.length, saved: {} };
+      const c = await call('importCheck', { items: r.deposits.concat(r.withdrawals).map(d => ({ key: d.key, acct7: d.acct7 })), closing: r.closing, years: wYears(r.withdrawals) });
+      IMP = { bens: c.bens || [], appr: c.approver || '', ws: {}, orders: c.orders || [], wrows: r.withdrawals.filter(d => c.done.indexOf(d.key) < 0), rows: r.deposits.filter(d => c.done.indexOf(d.key) < 0), done: c.done.length, wd: r.withdrawals.length, names: c.names, total: r.deposits.length, saved: {} };
       renderImp(); toast('تمت قراءة الكشف');
     } catch (e) { $('#pout').innerHTML = '<div class="msg">' + esc(e.message) + '</div>'; }
     finally { undo(); if ($('#dz')) $('#dz').classList.remove('busy'); if (!PEND) document.body.classList.remove('loading'); }
   };
 }
+/* ===== سحوبات الكشف: كل حوالة لمستفيد تُسجَّل هنا مباشرة (يصدر سند الصرف ويُطابق في نفس اللحظة) ===== */
+const wYears = ws => { const s = new Set(); ws.forEach(w => { const y = Number(hijri(w.date).split('-')[2]); if (y) [y - 1, y, y + 1].forEach(x => s.add(String(x))); }); return Array.from(s); };
+const hStage = d => { const m = Number(hijri(d).split('-')[1]); return m === 9 ? 'في رمضان' : m && m < 9 ? 'قبل رمضان' : 'أخرى'; };
+/** المستفيدون الذين يكفي محجوزهم: من يطابق حسابه أولًا، ثم من متاحه يساوي المبلغ */
+function wCands(w, y) {
+  return (IMP.bens || []).filter(b => (b.avail[y] || 0) + 0.001 >= w.amount).map(b => ({ b: b, m: !!w.acct7 && b.acct7.indexOf(w.acct7) >= 0, e: Math.abs((b.avail[y] || 0) - w.amount) < 0.005 }))
+    .sort((a, c) => (c.m - a.m) || (c.e - a.e) || (a.b.serial - c.b.serial));
+}
+function wState(w) {
+  const I = IMP; if (I.ws[w.key]) return I.ws[w.key];
+  const y = hijri(w.date).split('-')[2], fee = /fees|رسوم/i.test(w.raw) || w.type === 'عملية', st = { year: y, type: '', stage: hStage(w.date), approver: I.appr || '', apprSet: false, recipient: '', note: '', v: 'x', err: '' };
+  if (fee) st.v = '';
+  else {
+    const m = me.role === 'admin' ? wCands(w, y).filter(c => c.m) : [], cand = I.orders.filter(o => Math.abs(o.amount - w.amount) < 0.005);
+    if (m.length === 1) st.v = 'b:' + m[0].b.id;
+    else if (cand.length && (cand.length === 1 || cand.some(o => o.acct7 === w.acct7))) st.v = (cand.find(o => o.acct7 === w.acct7) || cand[0]).id;
+  }
+  if (st.v.indexOf('b:') === 0) { const b = I.bens.find(x => 'b:' + x.id === st.v); st.type = b.lastType || ''; st.recipient = b.name; }
+  return (I.ws[w.key] = st);
+}
+function wRow(w, i) {
+  const I = IMP, st = wState(w), sv = I.saved[w.key], adm = me.role === 'admin';
+  const head = '<div><b>' + R(w.amount) + '</b> <span class="lbl">' + hTxt(hijri(w.date)) + ' — ' + gTxt(w.date) + ' — ' + esc(w.type) + '</span></div><div class="lbl">' + esc(cleanRaw(w.raw)) + (w.acct7 ? ' — إلى حساب …' + esc(w.acct7) : '') + '</div>';
+  if (sv) return '<div class="irow" data-w="' + i + '">' + head + '<div><span class="tag stok">' + esc(sv === true ? 'سُجّل' : sv) + '</span></div></div>';
+  const cs = adm ? wCands(w, st.year) : [], cand = I.orders.filter(o => Math.abs(o.amount - w.amount) < 0.005), opt = (v, t) => '<option value="' + esc(v) + '"' + (st.v === v ? ' selected' : '') + '>' + t + '</option>';
+  const sel = '<select class="wb" aria-label="لمن هذا السحب">' + opt('x', '— لمن هذا السحب؟ —') +
+    (cs.length ? '<optgroup label="مستفيد محجوز له (سنة ' + esc(st.year) + ')">' + cs.map(c => opt('b:' + c.b.id, c.b.serial + ' — ' + esc(c.b.name) + ' — المتاح ' + nf(c.b.avail[st.year]) + (c.m ? ' ✓ الحساب مطابق' : ''))).join('') + '</optgroup>' : '') +
+    (cand.length ? '<optgroup label="سند صرف صادر مسبقًا">' + cand.map(o => opt(o.id, 'سند صرف ' + o.num + ' — ' + esc(o.label) + (o.acct7 && o.acct7 === w.acct7 ? ' ✓ الحساب مطابق' : ''))).join('') + '</optgroup>' : '') +
+    '<optgroup label="مصروف إداري">' + opt('', 'رسوم بنكية') + opt('op:أخرى', 'مصروف إداري آخر') + '</optgroup></select>';
+  const many = adm && cs.filter(c => c.m).length > 1 ? '<div class="lbl">⚠ رقم الحساب مطابق لأكثر من مستفيد، اختر الصحيح بنفسك.</div>' : '';
+  const none = adm && !cs.length && !cand.length ? '<div class="lbl">لا يوجد مستفيد محجوز له ما يكفي هذا المبلغ في سنة ' + esc(st.year) + '. راجع «المقدّر والمحجوز» أو غيّر السنة.</div>' : (!adm && !cand.length ? '<div class="lbl">صرف المستفيدين يسجله المدير.</div>' : '');
+  const isB = st.v.indexOf('b:') === 0, ys = [Number(hijri(w.date).split('-')[2]) - 1, Number(hijri(w.date).split('-')[2]), Number(hijri(w.date).split('-')[2]) + 1];
+  const det = isB ? '<div class="grid wd"><div><label>النوع</label><select class="wt"><option value="">اختر</option>' + TYPES_.map(t => '<option' + (st.type === t ? ' selected' : '') + '>' + t + '</option>').join('') + '</select></div>' +
+    '<div><label>سنة المحجوز</label><select class="wy">' + ys.map(y => '<option' + (String(y) === String(st.year) ? ' selected' : '') + '>' + y + '</option>').join('') + '</select></div>' +
+    '<div><label>المرحلة</label><select class="ws">' + ['قبل رمضان', 'في رمضان', 'أخرى'].map(t => '<option' + (st.stage === t ? ' selected' : '') + '>' + t + '</option>').join('') + '</select></div>' +
+    '<div><label>الموافقة من</label><input class="wa" value="' + esc(st.approver) + '" placeholder="مجلس الأمناء (المحجوز)"></div>' +
+    '<div><label>اسم المستلم</label><input class="wr" value="' + esc(st.recipient) + '"></div><div><label>البيان (اختياري)</label><input class="wn" value="' + esc(st.note) + '"></div></div>' : '';
+  return '<div class="irow" data-w="' + i + '">' + head + sel + many + none + det + '<div><button class="btn sm" data-wgo="1">تسجيل</button></div><div class="ierr">' + (st.err ? '<div class="msg">' + esc(st.err) + '</div>' : '') + '</div></div>';
+}
+const TYPES_ = ['زكاة', 'صدقة'];
+const wItem = w => { const st = IMP.ws[w.key], b = IMP.bens.find(x => 'b:' + x.id === st.v);
+  return { key: w.key, beneficiary: b.id, year: st.year, type: st.type, stage: st.stage, approver: st.approver, recipient: st.recipient, note: st.note, date: w.date, hijri: hijri(w.date), amount: w.amount, account: w.account, bankBal: w.bal, seq: w.seq }; };
+const wReady = () => IMP.wrows.filter(w => !IMP.saved[w.key] && IMP.ws[w.key] && IMP.ws[w.key].v.indexOf('b:') === 0 && IMP.ws[w.key].type);
+async function wPay(list) {
+  const I = IMP, r = await call('payFromStatement', { approver: $('#wga') ? $('#wga').value : '', items: list.map(wItem) });
+  let n = 0; r.results.forEach(x => { const w = I.wrows.find(z => z.key === x.key), st = I.ws[x.key];
+    if (x.ok) { n++; const b = I.bens.find(z => 'b:' + z.id === st.v); I.saved[x.key] = 'سند صرف ' + x.num + ' — ' + b.name; b.avail[st.year] = Math.round((b.avail[st.year] - w.amount) * 100) / 100; st.err = ''; }
+    else st.err = x.error; });
+  if ($('#wga') && $('#wga').value.trim()) I.appr = $('#wga').value.trim();
+  renderImp(); toast(n === list.length ? (n > 1 ? 'سُجّلت ' + n + ' حوالات' : 'سُجّلت الحوالة') : 'سُجّل ' + n + ' من ' + list.length + '، راجع المتبقي', n !== list.length);
+}
 function renderImp() {
-  const I = IMP; const left = I.rows.filter(d => !I.saved[d.key]).length;
+  const I = IMP; I.ws = I.ws || {}; const left = I.rows.filter(d => !I.saved[d.key]).length, wl = I.wrows.filter(w => !I.saved[w.key]).length, rd = me.role === 'admin' ? wReady().length : 0;
   $('#pout').innerHTML = '<div class="card"><b>' + I.total + '</b> إيداعًا في الكشف: <b>' + I.done + '</b> مسجّلة سابقًا، و<b>' + left + '</b> بانتظار التصنيف.' +
-    (I.wd ? '<br><span class="lbl">وفيه ' + I.wd + ' عملية سحب، ' + I.wrows.filter(w => !I.saved[w.key]).length + ' منها بانتظار التسجيل (أسفل القائمة).</span>' : '') + (I.wrows.length ? '<p class="lbl" style="margin:10px 0 4px">أصدرت سند صرف جديدًا بعد قراءة الكشف؟</p><button class="btn alt sm" id="oref">جلب السندات الجديدة للمطابقة</button>' : '') + '</div>' +
+    (I.wd ? '<br><span class="lbl">وفيه ' + I.wd + ' عملية سحب، ' + wl + ' منها بانتظار التسجيل (أسفل القائمة).</span>' : '') + '</div>' +
     I.rows.map((d, i) => { const sv = I.saved[d.key], nm = (I.names[d.acct7] || d.name);
       return '<div class="irow" data-i="' + i + '"><div><b>' + R(d.amount) + '</b> <span class="lbl">' + hTxt(hijri(d.date)) + ' — ' + gTxt(d.date) + ' — ' + esc(d.type) + (d.acct7 ? ' — حساب …' + esc(d.acct7) : '') + '</span></div>' +
         (sv ? '<div><span class="tag">حُفظ</span> رقم السند ' + sv + ' <button class="btn alt sm" data-rc="' + sv + '">عرض السند</button></div>' :
         '<input class="in" value="' + esc(nm) + '" placeholder="اسم المودع">' + (I.names[d.acct7] ? '<span class="lbl">اسم محفوظ لهذا الحساب</span>' : '') +
         '<div><button class="btn sm" data-a="زكاة">زكاة</button> <button class="btn alt sm" data-a="صدقة">صدقة</button> <button class="btn alt sm" data-a="split">تفصيل / تقسيم</button></div><div class="ierr"></div>') + '</div>'; }).join('') +
-    (I.wrows.length ? '<h3 style="font-family:Noto Kufi Arabic,sans-serif;font-weight:600;font-size:17px;margin:22px 0 0">السحوبات من الحساب</h3><p class="lbl">طابق كل سحب مع سند الصرف الذي صدر له، أو صنّفه تشغيليًا.</p>' + I.wrows.map((w, i) => {
-      const sv = I.saved[w.key], fee = /fees|رسوم/i.test(w.raw) || w.type === 'عملية';
-      const cand = I.orders.filter(o => Math.abs(o.amount - w.amount) < 0.005).sort((a, b) => (b.acct7 === w.acct7) - (a.acct7 === w.acct7));
-      const pick = fee ? '' : cand.length && (cand[0].acct7 === w.acct7 || cand.length === 1) ? cand[0].id : 'x';
-      return '<div class="irow" data-w="' + i + '"><div><b>' + R(w.amount) + '</b> <span class="lbl">' + hTxt(hijri(w.date)) + ' — ' + gTxt(w.date) + ' — ' + esc(w.type) + '</span></div><div class="lbl">' + esc(cleanRaw(w.raw)) + (w.acct7 ? ' — إلى حساب …' + esc(w.acct7) : '') + '</div>' +
-        (sv ? '<div><span class="tag">' + esc(sv === true ? 'سُجّل' : sv) + '</span></div>' :
-        '<select class="wb"><option value="x"' + (pick === 'x' ? ' selected' : '') + '>— اختر سند الصرف —</option>' +
-          cand.map(o => '<option value="' + esc(o.id) + '"' + (o.id === pick ? ' selected' : '') + '>سند صرف ' + o.num + ' — ' + esc(o.label) + ' — ' + esc(o.status) + (o.acct7 && o.acct7 === w.acct7 ? ' ✓ الحساب مطابق' : '') + '</option>').join('') +
-          '<option value=""' + (pick === '' ? ' selected' : '') + '>مصروف إداري — رسوم بنكية</option><option value="op:أخرى">مصروف إداري — أخرى (بلا سند)</option></select>' +
-          (cand.length ? '' : '<div class="lbl">لا يوجد سند صرف معتمد بهذا المبلغ. ' + (me.role === 'admin' ? 'أصدره من «المستفيدون» ثم ارجع هنا (لا حاجة لإعادة رفع الكشف).' : 'اطلب من المدير إصدار سند الصرف.') + '</div>') +
-          '<div><button class="btn sm" data-w="1">تسجيل</button></div><div class="ierr"></div>') + '</div>'; }).join('') : '');
+    (I.wrows.length ? '<h3 style="font-family:Noto Kufi Arabic,sans-serif;font-weight:600;font-size:17px;margin:22px 0 0">السحوبات من الحساب</h3><p class="lbl">اختر لكل حوالة المستفيد الذي صُرفت له، فيصدر سند الصرف تلقائيًا ويُخصم من محجوزه.</p>' +
+      (me.role === 'admin' && wl ? '<div class="card"><label for="wga" style="margin-top:0">الموافقة من (تُطبَّق على كل السحوبات)</label><input id="wga" value="' + esc(I.appr || '') + '" placeholder="مجلس الأمناء (المحجوز)">' +
+        '<div class="btnrow"><button class="btn" id="wall"' + (rd ? '' : ' disabled') + '>تسجيل كل المختار (' + rd + ')</button><button class="btn alt" id="oref">تحديث المستفيدين والسندات</button></div></div>' : '') +
+      I.wrows.map(wRow).join('') : '');
+  $('#pout').onchange = e => { const row = e.target.closest('.irow[data-w]'); if (!row) return; const w = I.wrows[row.dataset.w], st = I.ws[w.key], c = e.target.classList;
+    if (c.contains('wb')) { st.v = e.target.value; st.err = ''; const b = I.bens.find(x => 'b:' + x.id === st.v); if (b) { st.type = st.type || b.lastType || ''; st.recipient = b.name; } renderImp(); }
+    else if (c.contains('wy')) { st.year = e.target.value; const b = I.bens.find(x => 'b:' + x.id === st.v); if (b && !((b.avail[st.year] || 0) + 0.001 >= w.amount)) st.v = 'x'; renderImp(); }
+    else if (c.contains('wt')) { st.type = e.target.value; renderImp(); }
+    else if (c.contains('ws')) st.stage = e.target.value; };
+  $('#pout').oninput = e => { if (e.target.id === 'wga') { const v = e.target.value; I.appr = v; I.wrows.forEach(w => { const st = I.ws[w.key]; if (st && !st.apprSet) st.approver = v; }); document.querySelectorAll('#pout .irow .wa').forEach(x => { const st = I.ws[I.wrows[x.closest('.irow').dataset.w].key]; if (!st.apprSet) x.value = v; }); return; }
+    const row = e.target.closest('.irow[data-w]'); if (!row) return; const st = I.ws[I.wrows[row.dataset.w].key], c = e.target.classList;
+    if (c.contains('wa')) { st.approver = e.target.value; st.apprSet = true; } else if (c.contains('wr')) st.recipient = e.target.value; else if (c.contains('wn')) st.note = e.target.value; };
   $('#pout').onclick = async e => {
-    if (e.target.id === 'oref') { try { I.orders = (await call('importCheck', { items: [] })).orders || []; renderImp(); } catch (er) { } return; }
-    if (e.target.dataset.w) { const row = e.target.closest('.irow'), w = I.wrows[row.dataset.w], sel = row.querySelector('.wb').value;
-      if (sel === 'x') return row.querySelector('.ierr').innerHTML = '<div class="msg">اختر سند الصرف أو «تشغيلي».</div>';
+    if (e.target.id === 'oref') { try { const c = await call('importCheck', { items: [], years: wYears(I.wrows) }); I.orders = c.orders || []; I.bens = c.bens || []; renderImp(); } catch (er) { } return; }
+    if (e.target.id === 'wall') { const l = wReady(); if (l.length) try { await wPay(l); } catch (er) { } return; }
+    if (e.target.dataset.wgo) { const row = e.target.closest('.irow'), w = I.wrows[row.dataset.w], st = I.ws[w.key], sel = st.v, err = m => row.querySelector('.ierr').innerHTML = '<div class="msg">' + esc(m) + '</div>';
+      if (sel === 'x') return err('اختر المستفيد أو نوع المصروف.');
+      if (sel.indexOf('b:') === 0) { if (!st.type) return err('اختر النوع: زكاة أو صدقة.'); try { await wPay([w]); } catch (er) { err(er.message); } return; }
       const base = { date: w.date, hijri: hijri(w.date), amount: w.amount, account: w.account, bankBal: w.bal, seq: w.seq, key: w.key };
       try {
         if (sel === '' || sel === 'op:أخرى') { await call('addPayment', Object.assign(base, { year: hijri(w.date).split('-')[2], category: 'تشغيلي', opcat: sel ? 'أخرى' : 'رسوم بنكية', note: cleanRaw(w.raw) })); I.saved[w.key] = 'مصروف إداري'; }
         else { const o = I.orders.find(x => x.id === sel); await call('matchOrder', Object.assign(base, { id: sel })); I.saved[w.key] = 'طوبق مع سند صرف ' + o.num; I.orders = I.orders.filter(x => x.id !== sel); }
         renderImp(); }
-      catch (er) { row.querySelector('.ierr').innerHTML = '<div class="msg">' + esc(er.message) + '</div>'; }
+      catch (er) { err(er.message); }
       return; }
     const rc = e.target.dataset.rc; if (rc) return receipt(rc, () => sub('imp'));
     const a = e.target.dataset.a; if (!a) return; const row = e.target.closest('.irow'), d = I.rows[row.dataset.i], name = row.querySelector('.in').value.trim();
@@ -1050,12 +1104,13 @@ async function ops() {
       '<div class="lbl">' + esc(o.date) + (o.note ? ' — ' + esc(o.note) : '') + '</div><div class="ord"><span>سند صرف <b>' + o.num + '</b> — ' + R(o.amount) + ' <span class="tag st' + (o.status === 'مطابق' ? 'ok' : o.status === 'ملغى' ? 'no' : '') + '">' + esc(ST[o.status] || o.status) + '</span></span><span>' +
       '<button class="btn alt sm" data-act="vo">عرض</button>' + (!RO() && (o.status === 'معتمد' || o.status === 'حُوِّل') ? ' <button class="btn alt sm" data-act="att">' + (o.url ? 'تغيير الإيصال' : 'إرفاق الفاتورة / الإيصال') + '</button>' : '') +
       (o.url ? ' <a class="btn alt sm" href="' + esc(o.url) + '" target="_blank" rel="noopener">المرفق</a>' : '') +
-      (adm && (o.status === 'معتمد' || o.status === 'حُوِّل') ? ' <button class="btn alt sm" data-act="man">صُرف دون كشف</button> <button class="btn alt sm" data-act="cx">إلغاء</button>' : '') + '</span></div></div>').join('') : '<p class="lbl">لا توجد سندات مصروفات إدارية في هذه السنة.</p>') +
-    (r.fees.length ? '<h3 style="font-family:Noto Kufi Arabic,sans-serif;font-weight:600;font-size:16px">رسوم بنكية من الكشف</h3><div class="tw"><table><tr><th>التاريخ</th><th>البند</th><th>المبلغ</th></tr>' + r.fees.map(f => '<tr><td>' + esc(f.date) + '</td><td>' + esc(f.cat) + '</td><td>' + nf(f.amount) + '</td></tr>').join('') + '</table></div>' : '');
+      (adm && (o.status === 'معتمد' || o.status === 'حُوِّل') ? ' <button class="btn alt sm" data-act="cx">إلغاء</button>' : '') + (adm && o.status === 'مطابق' ? ' <button class="btn alt sm" data-act="um">فك المطابقة</button>' : '') + '</span></div></div>').join('') : '<p class="lbl">لا توجد سندات مصروفات إدارية في هذه السنة.</p>') +
+    (r.fees.length ? '<h3 style="font-family:Noto Kufi Arabic,sans-serif;font-weight:600;font-size:16px">رسوم بنكية من الكشف</h3><div class="tw"><table><tr><th>التاريخ</th><th>البند</th><th>المبلغ</th>' + (adm ? '<th></th>' : '') + '</tr>' + r.fees.map(f => '<tr><td>' + esc(f.date) + '</td><td>' + esc(f.cat) + '</td><td>' + nf(f.amount) + '</td>' + (adm ? '<td>' + (f.bank ? '<button class="btn alt sm" data-fum="' + esc(f.id) + '">فك المطابقة</button>' : '') + '</td>' : '') + '</tr>').join('') + '</table></div>' : '');
   $('#oy').onchange = () => { OPY = $('#oy').value; ops().catch(e => $('#sv').innerHTML = '<div class="msg">' + esc(e.message) + '</div>'); };
   OPCATS = r.cats; if (adm) $('#oadd').onclick = () => opForm(r.cats);
-  $('#sv').onclick = e => { const a = e.target.dataset.act; if (!a) return; const id = e.target.closest('[data-o]').dataset.o, o = r.orders.find(x => x.id === id);
-    if (a === 'vo') voucher(id); else if (a === 'att') attachForm(null, o, ops); else if (a === 'cx') cancelForm(o, ops); else if (a === 'man') manualForm(o, ops); };
+  $('#sv').onclick = e => { const fu = e.target.dataset.fum; if (fu) { const f = r.fees.find(x => x.id === fu); return unmatchForm({ pid: fu }, f.cat + ' ' + R(f.amount) + ' بتاريخ ' + f.date, ops); }
+    const a = e.target.dataset.act; if (!a) return; const id = e.target.closest('[data-o]').dataset.o, o = r.orders.find(x => x.id === id);
+    if (a === 'vo') voucher(id); else if (a === 'att') attachForm(null, o, ops); else if (a === 'cx') cancelForm(o, ops); else if (a === 'man') manualForm(o, ops); else if (a === 'um') unmatchForm({ id: id }, 'سند الصرف ' + o.num + ' (' + R(o.amount) + ')', ops); };
 }
 function opForm(cats) {
   form('<h3 style="font-family:Noto Kufi Arabic,sans-serif;margin:0;font-size:17px">سند صرف لمصروف إداري</h3>' +
@@ -1092,6 +1147,7 @@ async function ben() {
   const ST = { 'معتمد': 'بانتظار التحويل', 'حُوِّل': 'حُوِّل، بانتظار الكشف', 'مطابق': 'مطابق للكشف', 'ملغى': 'ملغى' };
   $('#sv').innerHTML = '<div class="ybar"><div class="yfld"><label for="by">السنة</label><select id="by" aria-label="السنة الهجرية">' + ySel(BY) + '</select></div><div>' +
     (adm ? '<button class="btn" id="badd">+ مستفيد جديد</button>' : '') + '</div></div>' +
+    '<p class="lbl" style="margin:10px 0 0">الصرف للمستفيدين يُسجَّل من «استيراد كشف» بعد التحويل: تختار لكل حوالة مستفيدها فيصدر سند الصرف تلقائيًا.</p>' +
     '<div class="mini" style="margin:14px 0"><div><span>المقدّر</span><b>' + nf(t.e) + '</b></div><div><span>المحجوز</span><b>' + nf(t.r) + '</b></div><div><span>المصروف</span><b>' + nf(t.p) + '</b></div><div class="au"><span>في سندات معلّقة</span><b>' + nf(t.q) + '</b></div><div class="ok"><span>المتاح للصرف</span><b>' + nf(t.r - t.p - t.q) + '</b></div></div>' +
     '<input id="bq" placeholder="ابحث برقم المستفيد أو اسمه" style="margin-bottom:10px"><div id="fm"></div>' +
     (BEN.length ? BEN.map(b => { const avail = b.reserved - b.paid - b.pending, pct = b.reserved ? Math.min(100, Math.round(b.paid / b.reserved * 100)) : 0, pq = b.reserved ? Math.min(100 - pct, Math.round(b.pending / b.reserved * 100)) : 0;
@@ -1102,17 +1158,16 @@ async function ben() {
       '<div class="mini" style="margin:10px 0"><div><span>المقدّر</span><b>' + nf(b.estimated) + '</b></div><div><span>المحجوز</span><b>' + nf(b.reserved) + '</b></div><div><span>المصروف</span><b>' + nf(b.paid) + '</b></div><div class="au"><span>معلّق</span><b>' + nf(b.pending) + '</b></div><div class="ok"><span>المتاح</span><b>' + nf(avail) + '</b></div></div>' +
       (b.reserved ? '<div class="pbar"><i style="width:' + pct + '%"></i><s style="width:' + pq + '%"></s></div>' : '') +
       (b.orders.length ? '<div style="margin:8px 0">' + b.orders.map(o => '<div class="ord" data-o="' + esc(o.id) + '"><span>سند صرف <b>' + o.num + '</b> — ' + R(o.amount) + ' <span class="tag st' + (o.status === 'مطابق' ? 'ok' : o.status === 'ملغى' ? 'no' : '') + '">' + esc(ST[o.status] || o.status) + '</span></span><span>' +
-        '<button class="btn alt sm" data-act="vo">عرض</button>' + (!RO() && (o.status === 'معتمد' || o.status === 'حُوِّل') ? ' <button class="btn alt sm" data-act="att">' + (o.url ? 'تغيير الإيصال' : 'إرفاق إيصال الحوالة') + '</button>' : '') +
-        (o.url ? ' <a class="btn alt sm" href="' + esc(o.url) + '" target="_blank" rel="noopener">الإيصال</a>' : '') +
-        (adm && (o.status === 'معتمد' || o.status === 'حُوِّل') ? ' <button class="btn alt sm" data-act="man">صُرف دون كشف</button> <button class="btn alt sm" data-act="cx">إلغاء</button>' : '') + '</span></div>').join('') + '</div>' : '') +
-      (adm ? '<button class="btn sm" data-act="ord">+ سند صرف</button> <button class="btn alt sm" data-act="alloc">المقدّر والمحجوز</button> <button class="btn alt sm" data-act="edit">تعديل البيانات</button>' : '') + '</div>'; }).join('')
+        '<button class="btn alt sm" data-act="vo">عرض</button>' + (o.url ? ' <a class="btn alt sm" href="' + esc(o.url) + '" target="_blank" rel="noopener">الإيصال</a>' : '') +
+        (adm && (o.status === 'معتمد' || o.status === 'حُوِّل') ? ' <button class="btn alt sm" data-act="cx">إلغاء</button>' : '') + (adm && o.status === 'مطابق' ? ' <button class="btn alt sm" data-act="um">فك المطابقة</button>' : '') + '</span></div>').join('') + '</div>' : '') +
+      (adm ? '<button class="btn alt sm" data-act="alloc">المقدّر والمحجوز</button> <button class="btn alt sm" data-act="edit">تعديل البيانات</button>' : '') + '</div>'; }).join('')
       : '<p class="lbl">لا يوجد مستفيدون بعد.' + (adm ? ' ابدأ بـ«مستفيد جديد».' : '') + '</p>');
   $('#by').onchange = () => { BY = $('#by').value; ben().catch(e => $('#sv').innerHTML = '<div class="msg">' + esc(e.message) + '</div>'); };
   $('#bq').oninput = () => { const q = $('#bq').value.trim().toLowerCase(); document.querySelectorAll('#sv .card[data-id]').forEach(x => x.classList.toggle('hid', !!q && x.dataset.q.indexOf(q) < 0)); };
   if (adm) $('#badd').onclick = () => benForm();
   $('#sv').onclick = e => { const a = e.target.dataset.act; if (!a) return; const b = BEN.find(x => x.id === e.target.closest('[data-id]').dataset.id), oe = e.target.closest('[data-o]'), o = oe && b.orders.find(x => x.id === oe.dataset.o);
-    if (a === 'ord') orderForm(b); else if (a === 'alloc') allocForm(b); else if (a === 'edit') benForm(b);
-    else if (a === 'vo') voucher(o.id); else if (a === 'att') attachForm(b, o); else if (a === 'cx') cancelForm(o); else if (a === 'man') manualForm(o); };
+    if (a === 'alloc') allocForm(b); else if (a === 'edit') benForm(b);
+    else if (a === 'vo') voucher(o.id); else if (a === 'cx') cancelForm(o); else if (a === 'um') unmatchForm({ id: o.id }, 'سند الصرف ' + o.num + ' (' + R(o.amount) + ')'); };
 }
 function benForm(b) {
   b = b || {};
@@ -1140,6 +1195,10 @@ function orderForm(b) {
     '<label>البيان</label><input id="on">',
     async () => { const r = await call('createOrder', { beneficiary: b.id, year: BY, amount: $('#oa').value, type: $('#ot').value, stage: $('#os').value, approver: $('#oap').value, recipient: $('#orc').value, account: $('#oac').value, note: $('#on').value });
       toast('صدر سند الصرف رقم ' + r.num); });
+}
+function unmatchForm(t, label, after) {
+  form('<h3 style="font-family:Noto Kufi Arabic,sans-serif;font-weight:600;font-size:17px;margin:0">فك المطابقة — ' + esc(label) + '</h3><div class="lbl">يُحذف تسجيل هذا الصرف ويرجع المبلغ للمحجوز، وتعود الحوالة إلى قائمة السحوبات عند رفع الكشف لتختار لها الصحيح.' + (t.id ? ' السند الذي صدر من الكشف يصبح ملغى ورقمه محفوظ.' : '') + ' كل ذلك يُسجَّل في سجل العمليات.</div><label>السبب</label><input id="umr" placeholder="مثل: اختير مستفيد خطأ">',
+    () => call('unmatch', Object.assign({ reason: $('#umr').value }, t)), after);
 }
 function cancelForm(o, after) {
   form('<h3 style="font-family:Noto Kufi Arabic,sans-serif;font-weight:600;font-size:17px;margin:0">إلغاء سند الصرف ' + o.num + '</h3><div class="lbl">يبقى رقم السند مسجّلًا بحالة «ملغى»، ويعود المبلغ إلى المتاح.</div><label>سبب الإلغاء</label><input id="cr">',
