@@ -700,7 +700,7 @@ async function dash() {
   try { localStorage.setItem('fund-att-seen', JSON.stringify(BAD)); } catch (e) { }
   $('#sv').innerHTML = '<div class="hello"><b>أهلًا ' + esc(me.name) + '</b><span>' + hTxt(hijri(today())) + '</span></div>' +
     (A.length ? '<button type="button" class="atth" id="atth" aria-expanded="' + open + '" aria-controls="atts"><span>تحتاج انتباهك</span><i class="cnt l' + top + '">' + A.length + '</i><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg></button>' +
-      '<div class="atts' + (open ? '' : ' hid') + '" id="atts">' + A.join('') + '</div>' : '<div class="recon ok">✓ كل شيء محدّث، لا يوجد ما ينتظرك.</div>') +
+      '<div class="atts' + (open ? '' : ' hid') + '" id="atts">' + A.join('') + '</div>' : '') +
     '<h3 class="st">عام ' + hy + 'هـ حتى الآن</h3><div class="mini"><div class="ok"><span>الوارد</span><b>' + nf(d.year.income) + '</b></div><div class="au"><span>المصروف</span><b>' + nf(d.year.out) + '</b></div><div><span>رصيد الصندوق</span><b>' + nf(d.balance) + '</b></div></div>' +
     '<h3 class="st">آخر العمليات</h3>' + (d.recent.length ? '<div class="rec">' + d.recent.map(x => '<div><i class="' + x.k + '">' + svg(x.k === 'in' ? 'in' : 'out') + '</i><span><b>' + esc(x.label || (x.k === 'in' ? 'إيداع' : 'صرف')) + '</b><small>' + gTxt(x.date) + '</small></span><em class="' + x.k + '">' + (x.k === 'in' ? '+' : '−') + nf(x.amount) + '</em></div>').join('') + '</div>' : '<p class="lbl">لا توجد عمليات بعد.</p>');
 }
