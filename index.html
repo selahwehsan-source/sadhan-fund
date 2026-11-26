@@ -163,6 +163,7 @@ body:not(.admin) main{max-width:460px;margin-top:-54px;position:relative;z-index
 .pb{break-after:page;page-break-after:always}.pb:last-child{break-after:auto;page-break-after:auto}
 .pchips{display:flex;flex-wrap:wrap;gap:6px;margin:10px 0}.pchips button{border:1px solid var(--ln);background:var(--sf);border-radius:999px;padding:6px 12px;cursor:pointer;font:inherit;font-size:14px;color:var(--ink)}.pchips button.on{background:var(--grad);color:#fff;border-color:transparent}
 .ycard{display:flex;flex-wrap:wrap;align-items:flex-end;gap:10px}.ycard>div{flex:1;min-width:140px}
+.wyr{display:flex;align-items:center;gap:10px;margin:8px 0 0}.wyr label{margin:0;white-space:nowrap}.wyr select{flex:1}
 .urow{display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap;padding:10px 0;border-bottom:1px solid var(--ln)}.urow.off>span:first-child{opacity:.55}
 body.admin .hero,body.admin .foot{display:none}
 body.admin #abar{display:flex;align-items:center;justify-content:space-between;gap:10px;position:sticky;top:0;z-index:30;padding:10px 14px;padding-top:calc(10px + env(safe-area-inset-top));background:var(--grad);color:#fff;box-shadow:0 6px 18px rgba(10,40,30,.18)}
@@ -947,15 +948,16 @@ function wRow(w, i) {
     (cs.length ? '<optgroup label="مستفيد محجوز له (سنة ' + esc(st.year) + ')">' + cs.map(c => opt('b:' + c.b.id, c.b.serial + ' — ' + esc(c.b.name) + ' — المتاح ' + nf(c.b.avail[st.year]) + (c.m ? ' ✓ الحساب مطابق' : ''))).join('') + '</optgroup>' : '') +
     (cand.length ? '<optgroup label="سند صرف صادر مسبقًا">' + cand.map(o => opt(o.id, 'سند صرف ' + o.num + ' — ' + esc(o.label) + (o.acct7 && o.acct7 === w.acct7 ? ' ✓ الحساب مطابق' : ''))).join('') + '</optgroup>' : '') +
     '<optgroup label="مصروف إداري">' + opt('', 'رسوم بنكية') + opt('op:أخرى', 'مصروف إداري آخر') + '</optgroup></select>';
+  const oth = adm && !cs.length ? wYears([w]).filter(y => y !== String(st.year) && wCands(w, y).length) : [];
   const many = adm && cs.filter(c => c.m).length > 1 ? '<div class="lbl">⚠ رقم الحساب مطابق لأكثر من مستفيد، اختر الصحيح بنفسك.</div>' : '';
-  const none = adm && !cs.length && !cand.length ? '<div class="lbl">لا يوجد مستفيد محجوز له ما يكفي هذا المبلغ في سنة ' + esc(st.year) + '. راجع «المقدّر والمحجوز» أو غيّر السنة.</div>' : (!adm && !cand.length ? '<div class="lbl">صرف المستفيدين يسجله المدير.</div>' : '');
+  const none = adm && !cs.length && !cand.length ? '<div class="lbl">لا يوجد مستفيد محجوز له ما يكفي هذا المبلغ في سنة ' + esc(st.year) + 'هـ.' + (oth.length ? ' يوجد محجوز في سنة ' + oth.join(' و') + 'هـ: غيّر «سنة المحجوز» أعلاه.' : ' راجع «المقدّر والمحجوز».') + '</div>' : (!adm && !cand.length ? '<div class="lbl">صرف المستفيدين يسجله المدير.</div>' : '');
   const isB = st.v.indexOf('b:') === 0, ys = [Number(hijri(w.date).split('-')[2]) - 1, Number(hijri(w.date).split('-')[2]), Number(hijri(w.date).split('-')[2]) + 1];
   const det = isB ? '<div class="grid wd"><div><label>النوع</label><select class="wt"><option value="">اختر</option>' + TYPES_.map(t => '<option' + (st.type === t ? ' selected' : '') + '>' + t + '</option>').join('') + '</select></div>' +
-    '<div><label>سنة المحجوز</label><select class="wy">' + ys.map(y => '<option' + (String(y) === String(st.year) ? ' selected' : '') + '>' + y + '</option>').join('') + '</select></div>' +
     '<div><label>المرحلة</label><select class="ws">' + ['قبل رمضان', 'في رمضان', 'أخرى'].map(t => '<option' + (st.stage === t ? ' selected' : '') + '>' + t + '</option>').join('') + '</select></div>' +
     '<div><label>الموافقة من</label><input class="wa" value="' + esc(st.approver) + '" placeholder="مجلس الأمناء (المحجوز)"></div>' +
     '<div><label>اسم المستلم</label><input class="wr" value="' + esc(st.recipient) + '"></div><div><label>البيان (اختياري)</label><input class="wn" value="' + esc(st.note) + '"></div></div>' : '';
-  return '<div class="irow" data-w="' + i + '">' + head + sel + many + none + det + '<div><button class="btn sm" data-wgo="1">تسجيل</button></div><div class="ierr">' + (st.err ? '<div class="msg">' + esc(st.err) + '</div>' : '') + '</div></div>';
+  const ysel = adm ? '<div class="wyr"><label>سنة المحجوز</label><select class="wy" aria-label="سنة المحجوز">' + ys.map(y => '<option value="' + y + '"' + (String(y) === String(st.year) ? ' selected' : '') + '>' + y + ' هـ' + (String(y) === hijri(w.date).split('-')[2] ? ' (سنة الحوالة)' : '') + '</option>').join('') + '</select></div>' : '';
+  return '<div class="irow" data-w="' + i + '">' + head + ysel + sel + many + none + det + '<div><button class="btn sm" data-wgo="1">تسجيل</button></div><div class="ierr">' + (st.err ? '<div class="msg">' + esc(st.err) + '</div>' : '') + '</div></div>';
 }
 const TYPES_ = ['زكاة', 'صدقة'];
 const wItem = w => { const st = IMP.ws[w.key], b = IMP.bens.find(x => 'b:' + x.id === st.v);
