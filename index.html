@@ -597,7 +597,7 @@ async function panel() {
 const AIC = {"home": "<path d=\"M3 11l9-7 9 7\"/><path d=\"M5 10v10h14V10\"/><path d=\"M10 20v-6h4v6\"/>", "in": "<path d=\"M12 3v12M7 10l5 5 5-5\"/><path d=\"M4 19h16\"/>", "out": "<path d=\"M12 21V9M7 14l5-5 5 5\"/><path d=\"M4 5h16\"/>", "more": "<circle cx=\"5\" cy=\"12\" r=\"1.6\"/><circle cx=\"12\" cy=\"12\" r=\"1.6\"/><circle cx=\"19\" cy=\"12\" r=\"1.6\"/>", "imp": "<path d=\"M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z\"/><path d=\"M14 3v5h5M12 18v-6M9 15l3-3 3 3\"/>", "add": "<circle cx=\"12\" cy=\"12\" r=\"9\"/><path d=\"M12 8v8M8 12h8\"/>", "list": "<path d=\"M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01\"/>", "ben": "<path d=\"M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2\"/><circle cx=\"9\" cy=\"7\" r=\"4\"/><path d=\"M23 21v-2a4 4 0 0 0-3-3.9M16 3.1a4 4 0 0 1 0 7.8\"/>", "ops": "<path d=\"M6 2h12v20l-3-2-3 2-3-2-3 2z\"/><path d=\"M9 7h6M9 11h6M9 15h4\"/>", "rep": "<path d=\"M4 20V10M10 20V4M16 20v-8M22 20H2\"/>", "users": "<circle cx=\"12\" cy=\"8\" r=\"4\"/><path d=\"M4 21v-1a6 6 0 0 1 6-6h4a6 6 0 0 1 6 6v1\"/>", "settings": "<circle cx=\"12\" cy=\"12\" r=\"3\"/><path d=\"M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z\"/>", "public": "<circle cx=\"12\" cy=\"12\" r=\"9\"/><path d=\"M3 12h18M12 3a14 14 0 0 1 0 18M12 3a14 14 0 0 0 0 18\"/>", "logout": "<path d=\"M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4M10 17l-5-5 5-5M5 12h12\"/>"};
 AIC.dash = AIC.home;
 const SEC = { dash: { t: 'الرئيسية', g: 'dash' }, imp: { t: 'استيراد كشف', g: 'rev', w: 1 }, add: { t: 'إيداع يدوي', g: 'rev', w: 1 }, list: { t: 'سجل الإيداعات', g: 'rev' },
-  ben: { t: 'المستفيدون', g: 'exp' }, ops: { t: 'مصروفات إدارية', g: 'exp' }, rep: { t: 'التقارير', g: 'more' }, users: { t: 'المستخدمون', g: 'more', admin: 1 },
+  ben: { t: 'المستفيدون', g: 'exp' }, ops: { t: 'سجل المصروفات', g: 'exp' }, rep: { t: 'التقارير', g: 'more' }, users: { t: 'المستخدمون', g: 'more', admin: 1 },
   settings: { t: 'الإعدادات', g: 'more', admin: 1 }, more: { t: 'المزيد', g: 'more' } };
 const GRP = { rev: ['imp', 'add', 'list'], exp: ['ben', 'ops'] }, GT = { rev: 'الإيرادات', exp: 'الصرف' };
 let CUR = 'dash', LAST = { rev: 'imp', exp: 'ben' }, LOGIN_AT = 0, WARNED = false, OPCATS = null, BADGE_AT = 0;
@@ -651,7 +651,7 @@ let FABY = 0, FABT = 0;
 window.addEventListener('scroll', () => { if (FABT) return; FABT = requestAnimationFrame(() => { FABT = 0; const y = window.scrollY, f = $('#fab'); if (!f) return;
   if (y < 60) f.classList.remove('mini'); else if (y > FABY + 6) f.classList.add('mini'); else if (y < FABY - 6) f.classList.remove('mini'); FABY = y; }); }, { passive: true });
 function setFab(n) {
-  const adm = me && me.role === 'admin', F = RO() ? null : { imp: ['إيداع يدوي', () => sub('add')], list: ['إيداع يدوي', () => sub('add')], ops: adm ? ['مصروف إداري', () => OPCATS && $('#fm') && opForm(OPCATS)] : null }[n];
+  const adm = me && me.role === 'admin', F = RO() ? null : { imp: ['إيداع يدوي', () => sub('add')], list: ['إيداع يدوي', () => sub('add')] }[n];
   const b = $('#fab'); b.classList.remove('mini'); b.classList.toggle('hid', !F); if (!F) return; b.querySelector('span').textContent = F[0]; b.setAttribute('aria-label', F[0]); b.onclick = F[1];
 }
 function pickBen() {
@@ -930,7 +930,7 @@ async function imp() {
       const r = await readPdf(f);
       if (!r.deposits.length && !r.withdrawals.length) throw new Error('لم أتعرف على أي عملية في الملف. تأكد أنه كشف حساب من الراجحي.');
       const c = await call('importCheck', { items: r.deposits.concat(r.withdrawals).map(d => ({ key: d.key, alt: d.alt, acct7: d.acct7 })), closing: r.closing, years: wYears(r.withdrawals) });
-      IMP = { bens: c.bens || [], appr: c.approver || '', ws: {}, orders: c.orders || [], wrows: r.withdrawals.filter(d => c.done.indexOf(d.key) < 0), rows: r.deposits.filter(d => c.done.indexOf(d.key) < 0), done: c.done.length, wd: r.withdrawals.length, names: c.names, total: r.deposits.length, saved: {} };
+      IMP = { bens: c.bens || [], cats: c.cats || [], payees: c.payees || [], appr: c.approver || '', ws: {}, orders: c.orders || [], wrows: r.withdrawals.filter(d => c.done.indexOf(d.key) < 0), rows: r.deposits.filter(d => c.done.indexOf(d.key) < 0), done: c.done.length, wd: r.withdrawals.length, names: c.names, total: r.deposits.length, saved: {} };
       renderImp(); toast('تمت قراءة الكشف');
     } catch (e) { $('#pout').innerHTML = '<div class="msg">' + esc(e.message) + '</div>'; }
     finally { undo(); if ($('#dz')) $('#dz').classList.remove('busy'); if (!PEND) document.body.classList.remove('loading'); }
@@ -946,8 +946,10 @@ function wCands(w, y) {
 }
 function wState(w) {
   const I = IMP; if (I.ws[w.key]) return I.ws[w.key];
-  const y = hijri(w.date).split('-')[2], fee = /fees|رسوم/i.test(w.raw) || w.type === 'عملية', st = { year: y, type: '', stage: hStage(w.date), approver: I.appr || '', apprSet: false, recipient: '', note: '', v: 'x', err: '' };
+  const y = hijri(w.date).split('-')[2], fee = /fees|رسوم/i.test(w.raw + ' ' + w.type) || w.type === 'عملية', st = { year: y, type: '', stage: hStage(w.date), approver: I.appr || '', apprSet: false, recipient: '', note: '', payee: '', cat: '', v: 'x', err: '' };
+  const gp = opGuess(w);
   if (fee) st.v = '';
+  else if (gp.payee && !(me.role === 'admin' && wCands(w, y).some(c => c.m))) { st.v = 'opv'; st.payee = gp.payee; st.note = gp.note; st.cat = gp.cat; }
   else {
     const m = me.role === 'admin' ? wCands(w, y).filter(c => c.m) : [], cand = I.orders.filter(o => Math.abs(o.amount - w.amount) < 0.005);
     if (m.length === 1) st.v = 'b:' + m[0].b.id;
@@ -955,6 +957,13 @@ function wState(w) {
   }
   if (st.v.indexOf('b:') === 0) { const b = I.bens.find(x => 'b:' + x.id === st.v); st.type = b.lastType || ''; st.recipient = b.name; }
   return (I.ws[w.key] = st);
+}
+/** اقتراح الجهة من نص الحوالة الصادرة (مثل: /رقم:مكتب المحاسبة/عقد الخدمات…) أو من الجهات السابقة */
+function opGuess(w) {
+  const raw = String(w.raw || ''), P = IMP.payees || [], known = P.find(p => p.name && raw.indexOf(p.name) >= 0);
+  if (known) return { payee: known.name, cat: known.cat || '', note: '' };
+  if (/صادرة/.test(w.type)) { const m = raw.match(/\d{6,}\s*\/\s*([^\/]+?)\s*\/\s*(.*)$/) || raw.match(/\/\d{6,}:\s*([^\/]+?)\s*\/\s*(.*)$/); if (m) return { payee: m[1].trim(), cat: '', note: m[2].replace(/\s+/g, ' ').trim().slice(0, 120) }; }
+  return { payee: '', cat: '', note: '' };
 }
 function wRow(w, i) {
   const I = IMP, st = wState(w), sv = I.saved[w.key], adm = me.role === 'admin';
@@ -964,26 +973,31 @@ function wRow(w, i) {
   const sel = '<select class="wb" aria-label="لمن هذا السحب">' + opt('x', '— لمن هذا السحب؟ —') +
     (cs.length ? '<optgroup label="مستفيد محجوز له (سنة ' + esc(st.year) + ')">' + cs.map(c => opt('b:' + c.b.id, c.b.serial + ' — ' + esc(c.b.name) + ' — المتاح ' + nf(c.b.avail[st.year]) + (c.m ? ' ✓ الحساب مطابق' : ''))).join('') + '</optgroup>' : '') +
     (cand.length ? '<optgroup label="سند صرف صادر مسبقًا">' + cand.map(o => opt(o.id, 'سند صرف ' + o.num + ' — ' + esc(o.label) + (o.acct7 && o.acct7 === w.acct7 ? ' ✓ الحساب مطابق' : ''))).join('') + '</optgroup>' : '') +
-    '<optgroup label="مصروف إداري">' + opt('', 'رسوم بنكية') + opt('op:أخرى', 'مصروف إداري آخر') + '</optgroup></select>';
+    (adm ? '<optgroup label="مصروف إداري">' + opt('opv', 'مصروف إداري بسند صرف (محاسب، مراجع، …)') + opt('', 'رسوم بنكية') + '</optgroup>' : '<optgroup label="مصروف إداري">' + opt('', 'رسوم بنكية') + '</optgroup>') + '</select>';
   const oth = adm && !cs.length ? wYears([w]).filter(y => y !== String(st.year) && wCands(w, y).length) : [];
   const many = adm && cs.filter(c => c.m).length > 1 ? '<div class="lbl">⚠ رقم الحساب مطابق لأكثر من مستفيد، اختر الصحيح بنفسك.</div>' : '';
   const none = adm && !cs.length && !cand.length ? '<div class="lbl">لا يوجد مستفيد محجوز له ما يكفي هذا المبلغ في سنة ' + esc(st.year) + 'هـ.' + (oth.length ? ' يوجد محجوز في سنة ' + oth.join(' و') + 'هـ: غيّر «سنة المحجوز» أعلاه.' : ' راجع «المقدّر والمحجوز».') + '</div>' : (!adm && !cand.length ? '<div class="lbl">صرف المستفيدين يسجله المدير.</div>' : '');
   const isB = st.v.indexOf('b:') === 0, ys = [Number(hijri(w.date).split('-')[2]) - 1, Number(hijri(w.date).split('-')[2]), Number(hijri(w.date).split('-')[2]) + 1];
+  const opd = st.v === 'opv' ? '<div class="grid wd"><div><label>الجهة المستفيدة</label><input class="wp" list="payees" value="' + esc(st.payee) + '" placeholder="مثل: مكتب المحاسبة"></div>' +
+    '<div><label>البند</label><select class="wc"><option value="">اختر</option>' + (I.cats || []).map(c => '<option' + (st.cat === c ? ' selected' : '') + '>' + esc(c) + '</option>').join('') + '</select></div>' +
+    '<div><label>الموافقة من</label><input class="wa" value="' + esc(st.approver) + '"></div><div><label>البيان (اختياري)</label><input class="wn" value="' + esc(st.note) + '"></div></div>' : '';
   const det = isB ? '<div class="grid wd"><div><label>النوع</label><select class="wt"><option value="">اختر</option>' + TYPES_.map(t => '<option' + (st.type === t ? ' selected' : '') + '>' + t + '</option>').join('') + '</select></div>' +
     '<div><label>المرحلة</label><select class="ws">' + ['قبل رمضان', 'في رمضان', 'أخرى'].map(t => '<option' + (st.stage === t ? ' selected' : '') + '>' + t + '</option>').join('') + '</select></div>' +
     '<div><label>الموافقة من</label><input class="wa" value="' + esc(st.approver) + '" placeholder="مجلس الأمناء (المحجوز)"></div>' +
     '<div><label>اسم المستلم</label><input class="wr" value="' + esc(st.recipient) + '"></div><div><label>البيان (اختياري)</label><input class="wn" value="' + esc(st.note) + '"></div></div>' : '';
   const ysel = adm ? '<div class="wyr"><label>سنة المحجوز</label><select class="wy" aria-label="سنة المحجوز">' + ys.map(y => '<option value="' + y + '"' + (String(y) === String(st.year) ? ' selected' : '') + '>' + y + ' هـ' + (String(y) === hijri(w.date).split('-')[2] ? ' (سنة الحوالة)' : '') + '</option>').join('') + '</select></div>' : '';
-  return '<div class="irow" data-w="' + i + '">' + head + ysel + sel + many + none + det + '<div><button class="btn sm" data-wgo="1">تسجيل</button></div><div class="ierr">' + (st.err ? '<div class="msg">' + esc(st.err) + '</div>' : '') + '</div></div>';
+  return '<div class="irow" data-w="' + i + '">' + head + ysel + sel + many + (st.v === 'opv' ? '' : none) + det + opd + '<div><button class="btn sm" data-wgo="1">تسجيل</button></div><div class="ierr">' + (st.err ? '<div class="msg">' + esc(st.err) + '</div>' : '') + '</div></div>';
 }
 const TYPES_ = ['زكاة', 'صدقة'];
 const wItem = w => { const st = IMP.ws[w.key], b = IMP.bens.find(x => 'b:' + x.id === st.v);
+  if (st.v === 'opv') return { kind: 'op', key: w.key, alt: w.alt, payee: st.payee, cat: st.cat, approver: st.approver, note: st.note, date: w.date, hijri: hijri(w.date), amount: w.amount, account: w.account, bankBal: w.bal, seq: w.seq };
   return { key: w.key, alt: w.alt, beneficiary: b.id, year: st.year, type: st.type, stage: st.stage, approver: st.approver, recipient: st.recipient, note: st.note, date: w.date, hijri: hijri(w.date), amount: w.amount, account: w.account, bankBal: w.bal, seq: w.seq }; };
-const wReady = () => IMP.wrows.filter(w => !IMP.saved[w.key] && IMP.ws[w.key] && IMP.ws[w.key].v.indexOf('b:') === 0 && IMP.ws[w.key].type);
+const wReady = () => IMP.wrows.filter(w => { const st = IMP.ws[w.key]; return !IMP.saved[w.key] && st && ((st.v.indexOf('b:') === 0 && st.type) || (st.v === 'opv' && st.payee.trim() && st.cat)); });
 async function wPay(list) {
   const I = IMP, r = await call('payFromStatement', { approver: $('#wga') ? $('#wga').value : '', items: list.map(wItem) });
   let n = 0; r.results.forEach(x => { const w = I.wrows.find(z => z.key === x.key), st = I.ws[x.key];
-    if (x.ok) { n++; const b = I.bens.find(z => 'b:' + z.id === st.v); I.saved[x.key] = 'سند صرف ' + x.num + ' — ' + b.name; b.avail[st.year] = Math.round((b.avail[st.year] - w.amount) * 100) / 100; st.err = ''; }
+    if (x.ok) { n++; st.err = ''; if (st.v === 'opv') { I.saved[x.key] = 'سند صرف ' + x.num + ' — ' + st.payee; if (!(I.payees || []).some(p => p.name === st.payee)) (I.payees = I.payees || []).push({ name: st.payee, cat: st.cat }); return; }
+      const b = I.bens.find(z => 'b:' + z.id === st.v); I.saved[x.key] = 'سند صرف ' + x.num + ' — ' + b.name; b.avail[st.year] = Math.round((b.avail[st.year] - w.amount) * 100) / 100; }
     else st.err = x.error; });
   if ($('#wga') && $('#wga').value.trim()) I.appr = $('#wga').value.trim();
   renderImp(); toast(n === list.length ? (n > 1 ? 'سُجّلت ' + n + ' حوالات' : 'سُجّلت الحوالة') : 'سُجّل ' + n + ' من ' + list.length + '، راجع المتبقي', n !== list.length);
@@ -997,24 +1011,27 @@ function renderImp() {
         (sv ? '<div><span class="tag">حُفظ</span> رقم السند ' + sv + ' <button class="btn alt sm" data-rc="' + sv + '">عرض السند</button></div>' :
         '<input class="in" value="' + esc(nm) + '" placeholder="اسم المودع">' + (I.names[nk] ? '<span class="lbl">' + (d.acct7 ? 'اسم محفوظ لهذا الحساب' : 'اسم محفوظ لهذا المحوِّل') + '</span>' : (d.name && !d.acct7 && /[A-Za-z]/.test(d.name) ? '<span class="lbl">الاسم كما ورد بالإنجليزية، صحّحه بالعربية مرة واحدة ويتذكره النظام</span>' : '')) +
         '<div><button class="btn sm" data-a="زكاة">زكاة</button> <button class="btn alt sm" data-a="صدقة">صدقة</button> <button class="btn alt sm" data-a="split">تفصيل / تقسيم</button></div><div class="ierr"></div>') + '</div>'; }).join('') +
-    (I.wrows.length ? '<h3 style="font-family:Noto Kufi Arabic,sans-serif;font-weight:600;font-size:17px;margin:22px 0 0">السحوبات من الحساب</h3><p class="lbl">اختر لكل حوالة المستفيد الذي صُرفت له، فيصدر سند الصرف تلقائيًا ويُخصم من محجوزه.</p>' +
+    (I.wrows.length ? '<h3 style="font-family:Noto Kufi Arabic,sans-serif;font-weight:600;font-size:17px;margin:22px 0 0">السحوبات من الحساب</h3><p class="lbl">اختر لكل حوالة المستفيد الذي صُرفت له أو «مصروف إداري بسند صرف»، فيصدر سند الصرف تلقائيًا.</p>' +
       (me.role === 'admin' && wl ? '<div class="card"><label for="wga" style="margin-top:0">الموافقة من (تُطبَّق على كل السحوبات)</label><input id="wga" value="' + esc(I.appr || '') + '" placeholder="مجلس الأمناء (المحجوز)">' +
         '<div class="btnrow"><button class="btn" id="wall"' + (rd ? '' : ' disabled') + '>تسجيل كل المختار (' + rd + ')</button><button class="btn alt" id="oref">تحديث المستفيدين والسندات</button></div></div>' : '') +
-      I.wrows.map(wRow).join('') : '');
+      I.wrows.map(wRow).join('') + '<datalist id="payees">' + (I.payees || []).map(p => '<option value="' + esc(p.name) + '">').join('') + '</datalist>' : '');
   $('#pout').onchange = e => { const row = e.target.closest('.irow[data-w]'); if (!row) return; const w = I.wrows[row.dataset.w], st = I.ws[w.key], c = e.target.classList;
     if (c.contains('wb')) { st.v = e.target.value; st.err = ''; const b = I.bens.find(x => 'b:' + x.id === st.v); if (b) { st.type = st.type || b.lastType || ''; st.recipient = b.name; } renderImp(); }
     else if (c.contains('wy')) { st.year = e.target.value; const b = I.bens.find(x => 'b:' + x.id === st.v); if (b && !((b.avail[st.year] || 0) + 0.001 >= w.amount)) st.v = 'x'; renderImp(); }
     else if (c.contains('wt')) { st.type = e.target.value; renderImp(); }
+    else if (c.contains('wc')) { st.cat = e.target.value; renderImp(); }
+    else if (c.contains('wp')) { const k = (I.payees || []).find(p => p.name === st.payee); if (k && k.cat && !st.cat) st.cat = k.cat; renderImp(); }
     else if (c.contains('ws')) st.stage = e.target.value; };
   $('#pout').oninput = e => { if (e.target.id === 'wga') { const v = e.target.value; I.appr = v; I.wrows.forEach(w => { const st = I.ws[w.key]; if (st && !st.apprSet) st.approver = v; }); document.querySelectorAll('#pout .irow .wa').forEach(x => { const st = I.ws[I.wrows[x.closest('.irow').dataset.w].key]; if (!st.apprSet) x.value = v; }); return; }
     const row = e.target.closest('.irow[data-w]'); if (!row) return; const st = I.ws[I.wrows[row.dataset.w].key], c = e.target.classList;
-    if (c.contains('wa')) { st.approver = e.target.value; st.apprSet = true; } else if (c.contains('wr')) st.recipient = e.target.value; else if (c.contains('wn')) st.note = e.target.value; };
+    if (c.contains('wp')) st.payee = e.target.value; else if (c.contains('wa')) { st.approver = e.target.value; st.apprSet = true; } else if (c.contains('wr')) st.recipient = e.target.value; else if (c.contains('wn')) st.note = e.target.value; };
   $('#pout').onclick = async e => {
-    if (e.target.id === 'oref') { try { const c = await call('importCheck', { items: [], years: wYears(I.wrows) }); I.orders = c.orders || []; I.bens = c.bens || []; renderImp(); } catch (er) { } return; }
+    if (e.target.id === 'oref') { try { const c = await call('importCheck', { items: [], years: wYears(I.wrows) }); I.orders = c.orders || []; I.bens = c.bens || []; I.payees = c.payees || []; I.cats = c.cats || []; renderImp(); } catch (er) { } return; }
     if (e.target.id === 'wall') { const l = wReady(); if (l.length) try { await wPay(l); } catch (er) { } return; }
     if (e.target.dataset.wgo) { const row = e.target.closest('.irow'), w = I.wrows[row.dataset.w], st = I.ws[w.key], sel = st.v, err = m => row.querySelector('.ierr').innerHTML = '<div class="msg">' + esc(m) + '</div>';
       if (sel === 'x') return err('اختر المستفيد أو نوع المصروف.');
       if (sel.indexOf('b:') === 0) { if (!st.type) return err('اختر النوع: زكاة أو صدقة.'); try { await wPay([w]); } catch (er) { err(er.message); } return; }
+      if (sel === 'opv') { if (!st.payee.trim()) return err('اكتب الجهة المستفيدة.'); if (!st.cat) return err('اختر البند.'); try { await wPay([w]); } catch (er) { err(er.message); } return; }
       const base = { date: w.date, hijri: hijri(w.date), amount: w.amount, account: w.account, bankBal: w.bal, seq: w.seq, key: w.key, alt: w.alt };
       try {
         if (sel === '' || sel === 'op:أخرى') { await call('addPayment', Object.assign(base, { year: hijri(w.date).split('-')[2], category: 'تشغيلي', opcat: sel ? 'أخرى' : 'رسوم بنكية', note: cleanRaw(w.raw) })); I.saved[w.key] = 'مصروف إداري'; }
@@ -1111,33 +1128,40 @@ async function settings() {
     catch (e) { $('#sres').innerHTML = '<div class="msg">' + esc(e.message) + '</div>'; } };
 }
 
-/* ===== المصروفات الإدارية (التشغيلية) ===== */
-let OPY = null;
+/* ===== سجل المصروفات الإدارية: تُسجَّل من الكشف (سند صرف تلقائي)، وهنا السجل والملخص ===== */
+let OPY = null, OPF = '';
 async function ops() {
   OPY = OPY || hijri(today()).split('-')[2]; const adm = me.role === 'admin', g = hijriYearRange(OPY) || {};
-  const r = await call('listOperating', Object.assign({ year: OPY }, g)), tot = r.orders.filter(o => o.status === 'مطابق').reduce((a, o) => a + o.amount, 0) + r.fees.reduce((a, f) => a + f.amount, 0);
-  const ST = { 'معتمد': 'بانتظار التحويل', 'حُوِّل': 'حُوِّل، بانتظار الكشف', 'مطابق': 'مطابق للكشف', 'ملغى': 'ملغى' };
-  $('#sv').innerHTML = '<div class="ybar"><div class="yfld"><label for="oy">السنة</label><select id="oy" aria-label="السنة الهجرية">' + ySel(OPY) + '</select></div><div>' +
-    (adm ? '<button class="btn" id="oadd">+ مصروف إداري</button>' : '') + '</div></div><div class="mini" style="margin:14px 0"><div><span>المصروف الإداري في ' + esc(OPY) + 'هـ</span><b>' + nf(tot) + '</b></div><div class="au"><span>سندات مفتوحة</span><b>' + r.orders.filter(o => o.status === 'معتمد' || o.status === 'حُوِّل').length + '</b></div></div><div id="fm"></div>' +
-    (r.orders.length ? r.orders.map(o => '<div class="card" style="margin-bottom:10px" data-o="' + esc(o.id) + '"><div style="display:flex;justify-content:space-between;gap:8px"><b>' + esc(o.payee) + '</b><span class="tag">' + esc(o.cat) + '</span></div>' +
-      '<div class="lbl">' + esc(o.date) + (o.note ? ' — ' + esc(o.note) : '') + '</div><div class="ord"><span>سند صرف <b>' + o.num + '</b> — ' + R(o.amount) + ' <span class="tag st' + (o.status === 'مطابق' ? 'ok' : o.status === 'ملغى' ? 'no' : '') + '">' + esc(ST[o.status] || o.status) + '</span></span><span>' +
-      '<button class="btn alt sm" data-act="vo">عرض</button>' + (!RO() && (o.status === 'معتمد' || o.status === 'حُوِّل') ? ' <button class="btn alt sm" data-act="att">' + (o.url ? 'تغيير الإيصال' : 'إرفاق الفاتورة / الإيصال') + '</button>' : '') +
-      (o.url ? ' <a class="btn alt sm" href="' + esc(o.url) + '" target="_blank" rel="noopener">المرفق</a>' : '') +
-      (adm && (o.status === 'معتمد' || o.status === 'حُوِّل') ? ' <button class="btn alt sm" data-act="cx">إلغاء</button>' : '') + (adm && o.status === 'مطابق' ? ' <button class="btn alt sm" data-act="um">فك المطابقة</button>' : '') + '</span></div></div>').join('') : '<p class="lbl">لا توجد سندات مصروفات إدارية في هذه السنة.</p>') +
-    (r.fees.length ? '<h3 style="font-family:Noto Kufi Arabic,sans-serif;font-weight:600;font-size:16px">رسوم بنكية من الكشف</h3><div class="tw"><table><tr><th>التاريخ</th><th>البند</th><th>المبلغ</th>' + (adm ? '<th></th>' : '') + '</tr>' + r.fees.map(f => '<tr><td>' + esc(f.date) + '</td><td>' + esc(f.cat) + '</td><td>' + nf(f.amount) + '</td>' + (adm ? '<td>' + (f.bank ? '<button class="btn alt sm" data-fum="' + esc(f.id) + '">فك المطابقة</button>' : '') + '</td>' : '') + '</tr>').join('') + '</table></div>' : '');
+  const r = await call('listOperating', Object.assign({ year: OPY }, g));
+  const ST = { 'معتمد': 'بانتظار الكشف', 'حُوِّل': 'بانتظار الكشف', 'مطابق': 'مطابق للكشف', 'ملغى': 'ملغى' };
+  const items = r.orders.map(o => ({ k: 'o', id: o.id, date: o.date, payee: o.payee, cat: o.cat || 'أخرى', amount: o.amount, num: o.num, status: o.status, note: o.note }))
+    .concat(r.fees.map(f => ({ k: 'f', id: f.id, date: f.date, payee: '', cat: f.cat, amount: f.amount, status: 'مطابق', note: f.note, bank: f.bank })))
+    .sort((a, b) => a.date < b.date ? 1 : a.date > b.date ? -1 : 0);
+  const live = items.filter(x => x.status === 'مطابق'), tot = live.reduce((a, x) => a + x.amount, 0), byCat = {};
+  live.forEach(x => { byCat[x.cat] = (byCat[x.cat] || 0) + x.amount; });
+  const cats = Object.keys(byCat).sort((a, b) => byCat[b] - byCat[a]); if (OPF && !items.some(x => x.cat === OPF)) OPF = '';
+  const shown = items.filter(x => !OPF || x.cat === OPF), open = items.filter(x => x.status === 'معتمد' || x.status === 'حُوِّل').length;
+  $('#sv').innerHTML = '<div class="ybar"><div class="yfld"><label for="oy">السنة</label><select id="oy" aria-label="السنة الهجرية">' + ySel(OPY) + '</select></div></div>' +
+    '<p class="lbl" style="margin:10px 0 0">المصروفات الإدارية تُسجَّل من «استيراد كشف» بعد التحويل: تختار للحوالة «مصروف إداري بسند صرف» فيصدر السند تلقائيًا.</p>' +
+    '<div class="mini" style="margin:14px 0"><div><span>المصروف الإداري في ' + esc(OPY) + 'هـ</span><b>' + nf(tot) + '</b></div>' + (open ? '<div class="au"><span>سندات صادرة مسبقًا بانتظار الكشف</span><b>' + open + '</b></div>' : '') + '</div>' +
+    (cats.length ? '<div class="tw"><table class="wrap"><tr><th>البند</th><th>المبلغ</th></tr>' + cats.map(c => '<tr><td>' + esc(c) + '</td><td>' + nf(byCat[c]) + '</td></tr>').join('') + '<tr class="sumrow"><td>المجموع</td><td>' + nf(tot) + '</td></tr></table></div>' : '') +
+    (cats.length > 1 ? '<div class="pchips"><button type="button" data-cf=""' + (OPF ? '' : ' class="on"') + '>الكل</button>' + cats.map(c => '<button type="button" data-cf="' + esc(c) + '"' + (OPF === c ? ' class="on"' : '') + '>' + esc(c) + '</button>').join('') + '</div>' : '') +
+    '<div id="fm"></div>' +
+    (shown.length ? shown.map(x => '<div class="card" style="margin-bottom:10px" data-x="' + esc(x.id) + '" data-k="' + x.k + '"><div style="display:flex;justify-content:space-between;gap:8px"><b>' + esc(x.payee || x.cat) + '</b><span class="tag">' + esc(x.cat) + '</span></div>' +
+      '<div class="lbl">' + hTxt(hijri(x.date)) + ' — ' + gTxt(x.date) + (x.note && x.k === 'o' ? ' — ' + esc(x.note) : '') + '</div>' +
+      '<div class="ord"><span>' + (x.k === 'o' ? 'سند صرف <b>' + x.num + '</b> — ' : '') + R(x.amount) + ' <span class="tag st' + (x.status === 'مطابق' ? 'ok' : x.status === 'ملغى' ? 'no' : '') + '">' + esc(ST[x.status] || x.status) + '</span></span><span>' +
+      (x.k === 'o' ? '<button class="btn alt sm" data-act="vo">عرض</button>' : '') +
+      (adm && x.k === 'o' && (x.status === 'معتمد' || x.status === 'حُوِّل') ? ' <button class="btn alt sm" data-act="cx">إلغاء</button>' : '') +
+      (adm && x.status === 'مطابق' && (x.k === 'o' || x.bank) ? ' <button class="btn alt sm" data-act="um">فك المطابقة</button>' : '') + '</span></div></div>').join('')
+      : '<p class="lbl">لا توجد مصروفات إدارية في هذه السنة.</p>');
   $('#oy').onchange = () => { OPY = $('#oy').value; ops().catch(e => $('#sv').innerHTML = '<div class="msg">' + esc(e.message) + '</div>'); };
-  OPCATS = r.cats; if (adm) $('#oadd').onclick = () => opForm(r.cats);
-  $('#sv').onclick = e => { const fu = e.target.dataset.fum; if (fu) { const f = r.fees.find(x => x.id === fu); return unmatchForm({ pid: fu }, f.cat + ' ' + R(f.amount) + ' بتاريخ ' + f.date, ops); }
-    const a = e.target.dataset.act; if (!a) return; const id = e.target.closest('[data-o]').dataset.o, o = r.orders.find(x => x.id === id);
-    if (a === 'vo') voucher(id); else if (a === 'att') attachForm(null, o, ops); else if (a === 'cx') cancelForm(o, ops); else if (a === 'man') manualForm(o, ops); else if (a === 'um') unmatchForm({ id: id }, 'سند الصرف ' + o.num + ' (' + R(o.amount) + ')', ops); };
-}
-function opForm(cats) {
-  form('<h3 style="font-family:Noto Kufi Arabic,sans-serif;margin:0;font-size:17px">سند صرف لمصروف إداري</h3>' +
-    '<label>الجهة المستفيدة من الدفعة (مثل: مكتب المحاسبة، الأخصائية الاجتماعية)</label><input id="xp">' +
-    '<label>البند</label><select id="xc">' + cats.map(c => '<option>' + c + '</option>').join('') + '</select>' +
-    '<label>المبلغ</label><input id="xa" inputmode="decimal"><label>البيان (مثل: الدفعة الأولى من أتعاب مراجعة الحسابات)</label><input id="xn">' +
-    '<label>رقم حساب أو آيبان الجهة (اختياري)</label><input id="xac"><label>الموافقة من (اختياري)</label><input id="xap">',
-    async () => { const r = await call('createOrder', { kind: 'op', payee: $('#xp').value, cat: $('#xc').value, amount: $('#xa').value, note: $('#xn').value, account: $('#xac').value, approver: $('#xap').value, year: OPY }); toast('صدر سند الصرف رقم ' + r.num); }, ops);
+  $('#sv').onclick = e => {
+    const cf = e.target.dataset.cf; if (cf !== undefined) { OPF = cf; ops().catch(fail); return; }
+    const a = e.target.dataset.act; if (!a) return; const el = e.target.closest('[data-x]'), x = items.find(i => i.id === el.dataset.x && i.k === el.dataset.k);
+    if (a === 'vo') voucher(x.id);
+    else if (a === 'cx') cancelForm({ id: x.id, num: x.num }, ops);
+    else if (a === 'um') unmatchForm(x.k === 'o' ? { id: x.id } : { pid: x.id }, (x.k === 'o' ? 'سند الصرف ' + x.num + ' ' : x.cat + ' ') + '(' + R(x.amount) + ')', ops);
+  };
 }
 
 /* قائمة الإقامة: اختيار من القائمة أو «أخرى» مع كتابة المدينة */
@@ -1222,38 +1246,6 @@ function unmatchForm(t, label, after) {
 function cancelForm(o, after) {
   form('<h3 style="font-family:Noto Kufi Arabic,sans-serif;font-weight:600;font-size:17px;margin:0">إلغاء سند الصرف ' + o.num + '</h3><div class="lbl">يبقى رقم السند مسجّلًا بحالة «ملغى»، ويعود المبلغ إلى المتاح.</div><label>سبب الإلغاء</label><input id="cr">',
     () => call('cancelOrder', { id: o.id, reason: $('#cr').value }), after);
-}
-function manualForm(o, after) {
-  form('<h3 style="font-family:Noto Kufi Arabic,sans-serif;font-weight:600;font-size:17px;margin:0">تسجيل سند الصرف ' + o.num + ' كمصروف</h3><div class="lbl">استخدمه فقط إن صُرف المبلغ بطريقة لا تظهر في كشف الحساب (مثل شيك أو نقد). وإلا اتركه يُطابَق تلقائيًا عند رفع الكشف.</div><label>تاريخ الصرف</label><input id="md" type="date" value="' + today() + '">',
-    () => call('payOrderManual', { id: o.id, date: $('#md').value, hijri: hijri($('#md').value) }), after);
-}
-async function readTransferPdf(file) {
-  await loadPdfJs(); const pdf = await pdfjsLib.getDocument({ data: await file.arrayBuffer() }).promise, items = [];
-  for (let p = 1; p <= pdf.numPages; p++) (await (await pdf.getPage(p)).getTextContent()).items.forEach(it => { const t = it.str.normalize('NFKC').trim(); if (t) items.push({ x: it.transform[4], y: it.transform[5], t: t }); });
-  const all = items.map(i => i.t).join(' '), out = {};
-  const am = all.match(/([\d,]+(?:\.\d{1,2})?)\s*SAR/); if (am) out.amount = parseFloat(am[1].replace(/,/g, ''));
-  const dt = all.match(/(\d{4})\/(\d{2})\/(\d{2})/); if (dt) out.date = dt[1] + '-' + dt[2] + '-' + dt[3];
-  const to = items.find(i => /^To$/i.test(i.t)), nums = items.filter(i => /^\d{10,26}$/.test(i.t.replace(/\s/g, '')));
-  if (to && nums.length) out.account = nums.sort((a, b) => Math.abs(a.y - to.y) - Math.abs(b.y - to.y))[0].t.replace(/\s/g, '');
-  return out;
-}
-function attachForm(b, o, after) {
-  form('<h3 style="font-family:Noto Kufi Arabic,sans-serif;font-weight:600;font-size:17px;margin:0">إيصال حوالة سند الصرف ' + o.num + ' (' + R(o.amount) + ')</h3><div class="lbl">ارفع إيصال الحوالة من تطبيق الراجحي (PDF أو صورة). يُحفظ في Drive الصندوق، ويُقرأ منه التاريخ والمبلغ وحساب المستلم إن كان PDF.</div>' +
-    '<input type="file" id="tf" accept="application/pdf,image/*"><div id="tinfo"></div><label>تاريخ الحوالة</label><input id="td" type="date" value="' + today() + '"><label>حساب المستلم</label><input id="tac">',
-    async () => {
-      const f = $('#tf').files[0]; if (!f) throw new Error('اختر ملف الإيصال.');
-      if (f.size > 5 * 1024 * 1024) throw new Error('حجم الملف أكبر من 5 ميجابايت.');
-      const data = await new Promise((res, rej) => { const r = new FileReader(); r.onload = () => res(String(r.result).split(',')[1]); r.onerror = () => rej(new Error('تعذرت قراءة الملف.')); r.readAsDataURL(f); });
-      await call('attachTransfer', { id: o.id, data: data, mime: f.type, name: f.name, date: $('#td').value, account: $('#tac').value });
-    }, after);
-  $('#tf').onchange = async () => {
-    const f = $('#tf').files[0]; $('#tinfo').innerHTML = ''; if (!f || f.type !== 'application/pdf') return;
-    $('#tinfo').innerHTML = '<p class="lbl"><span class="spin"></span>جارٍ قراءة الإيصال…</p>';
-    try { const r = await readTransferPdf(f); if (r.date) $('#td').value = r.date; if (r.account) $('#tac').value = r.account;
-      $('#tinfo').innerHTML = '<div class="msg ' + (r.amount === o.amount ? 'good' : '') + '">قُرئ من الإيصال: ' + (r.amount !== undefined ? 'المبلغ ' + R(r.amount) : 'لم يُقرأ المبلغ') + (r.date ? ' — التاريخ ' + esc(r.date) : '') + (r.account ? ' — الحساب …' + esc(r.account.slice(-7)) : '') +
-        (r.amount !== undefined && r.amount !== o.amount ? '<br><b>تنبيه: مبلغ الإيصال لا يساوي مبلغ سند الصرف.</b>' : '') + '</div>'; }
-    catch (e) { $('#tinfo').innerHTML = '<div class="msg">تعذرت قراءة الإيصال، أكمل البيانات يدويًا.</div>'; }
-  };
 }
 function vchHtml(v, fund) {
   return '<div class="rcpt"><div class="rh"><div><div class="rf">' + esc(fund) + '</div><div class="lbl">' + ORG + '</div></div>' +
