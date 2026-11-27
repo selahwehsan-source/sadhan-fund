@@ -289,7 +289,7 @@ function toast(m, bad) {
 function busyBtn(b, label) { if (!b) return () => {}; const old = b.innerHTML; b.disabled = true; b.classList.add('busy'); b.innerHTML = '<span class="spin"></span>' + label;
   return () => { if (b.isConnected) { b.disabled = false; b.classList.remove('busy'); b.innerHTML = old; } }; }
 /* ===== السرعة: تحميل لوحة التحكم دفعة واحدة + ذاكرة مؤقتة تتحدّث بهدوء (الموقع مغلق: لا شيء يُعرض قبل الدخول) ===== */
-const READS = { publicReport: 1, yearReceipts: 1, yearVouchers: 1, dashboard: 1, listDeposits: 1, listBeneficiaries: 1, openOrders: 1, listOperating: 1, internalReport: 1, adminHome: 1, getSettings: 1, listUsers: 1, getReceipt: 1, getVoucher: 1 };
+const READS = { listSpending: 1, publicReport: 1, yearReceipts: 1, yearVouchers: 1, dashboard: 1, listDeposits: 1, listBeneficiaries: 1, openOrders: 1, listOperating: 1, internalReport: 1, adminHome: 1, getSettings: 1, listUsers: 1, getReceipt: 1, getVoucher: 1 };
 const NOINV = { login: 1, exportData: 1, exportAll: 1, exportReport: 1, backupNow: 1 };
 /* المكتبات من مستودع الموقع نفسه (لا اعتماد على جهة خارجية)، وفي نسخة Apps Script من cdnjs بنفس الإصدار */
 const LIB = API_URL ? { xlsx: 'lib/xlsx.style.min.js', pdf: 'lib/pdf.min.js', worker: 'lib/pdf.worker.min.js' }
@@ -323,7 +323,7 @@ function fetchStore(a, p, k) {
 function stdItems() {
   if (!me) return []; const y = hijri(today()).split('-')[2], g = hijriYearRange(y) || {}, oy = OPY || y, ttl = { title: 'التقرير السنوي لعام ' + y + 'هـ' };
   const it = [['adminHome', { year: y, from: g.from, to: g.to }], ['adminHome', { light: true }], ['listDeposits', { from: depFrom() }], ['dashboard', {}], ['listBeneficiaries', { year: BY || y }],
-    ['listOperating', Object.assign({ year: oy }, hijriYearRange(oy) || {})], ['publicReport', Object.assign({}, g, ttl)], ['internalReport', Object.assign({}, g, ttl)]];
+    ['listSpending', { year: oy }], ['publicReport', Object.assign({}, g, ttl)], ['internalReport', Object.assign({}, g, ttl)]];
   if (me.role === 'admin') it.push(['getSettings', {}], ['listUsers', {}]);
   return it;
 }
@@ -1128,39 +1128,40 @@ async function settings() {
     catch (e) { $('#sres').innerHTML = '<div class="msg">' + esc(e.message) + '</div>'; } };
 }
 
-/* ===== سجل المصروفات الإدارية: تُسجَّل من الكشف (سند صرف تلقائي)، وهنا السجل والملخص ===== */
+/* ===== سجل المصروفات: كل ما صُرف (المستفيدون والإدارية ورسوم البنك) — التسجيل نفسه من «استيراد كشف» ===== */
 let OPY = null, OPF = '';
 async function ops() {
-  OPY = OPY || hijri(today()).split('-')[2]; const adm = me.role === 'admin', g = hijriYearRange(OPY) || {};
-  const r = await call('listOperating', Object.assign({ year: OPY }, g));
+  OPY = OPY || hijri(today()).split('-')[2]; const adm = me.role === 'admin';
+  const r = await call('listSpending', { year: OPY }), items = r.list;
   const ST = { 'معتمد': 'بانتظار الكشف', 'حُوِّل': 'بانتظار الكشف', 'مطابق': 'مطابق للكشف', 'ملغى': 'ملغى' };
-  const items = r.orders.map(o => ({ k: 'o', id: o.id, date: o.date, payee: o.payee, cat: o.cat || 'أخرى', amount: o.amount, num: o.num, status: o.status, note: o.note }))
-    .concat(r.fees.map(f => ({ k: 'f', id: f.id, date: f.date, payee: '', cat: f.cat, amount: f.amount, status: 'مطابق', note: f.note, bank: f.bank })))
-    .sort((a, b) => a.date < b.date ? 1 : a.date > b.date ? -1 : 0);
-  const live = items.filter(x => x.status === 'مطابق'), tot = live.reduce((a, x) => a + x.amount, 0), byCat = {};
-  live.forEach(x => { byCat[x.cat] = (byCat[x.cat] || 0) + x.amount; });
-  const cats = Object.keys(byCat).sort((a, b) => byCat[b] - byCat[a]); if (OPF && !items.some(x => x.cat === OPF)) OPF = '';
-  const shown = items.filter(x => !OPF || x.cat === OPF), open = items.filter(x => x.status === 'معتمد' || x.status === 'حُوِّل').length;
+  const live = items.filter(x => x.status === 'مطابق'), sum = f => live.filter(f).reduce((a, x) => a + x.amount, 0);
+  const z = sum(x => x.grp === 'ben' && x.cat === 'زكاة'), sd = sum(x => x.grp === 'ben' && x.cat === 'صدقة'), op = sum(x => x.grp === 'op'), byCat = {};
+  live.filter(x => x.grp === 'op').forEach(x => { byCat[x.cat] = (byCat[x.cat] || 0) + x.amount; });
+  const cats = Object.keys(byCat).sort((a, b) => byCat[b] - byCat[a]);
+  const F = { '': ['الكل', () => true], ben: ['المستفيدون', x => x.grp === 'ben'], op: ['الإدارية', x => x.grp === 'op'] };
+  cats.forEach(c => { F['c:' + c] = [c, x => x.grp === 'op' && x.cat === c]; }); if (!F[OPF]) OPF = '';
+  const shown = items.filter(F[OPF][1]), open = items.filter(x => x.status === 'معتمد' || x.status === 'حُوِّل').length;
   $('#sv').innerHTML = '<div class="ybar"><div class="yfld"><label for="oy">السنة</label><select id="oy" aria-label="السنة الهجرية">' + ySel(OPY) + '</select></div></div>' +
-    '<p class="lbl" style="margin:10px 0 0">المصروفات الإدارية تُسجَّل من «استيراد كشف» بعد التحويل: تختار للحوالة «مصروف إداري بسند صرف» فيصدر السند تلقائيًا.</p>' +
-    '<div class="mini" style="margin:14px 0"><div><span>المصروف الإداري في ' + esc(OPY) + 'هـ</span><b>' + nf(tot) + '</b></div>' + (open ? '<div class="au"><span>سندات صادرة مسبقًا بانتظار الكشف</span><b>' + open + '</b></div>' : '') + '</div>' +
-    (cats.length ? '<div class="tw"><table class="wrap"><tr><th>البند</th><th>المبلغ</th></tr>' + cats.map(c => '<tr><td>' + esc(c) + '</td><td>' + nf(byCat[c]) + '</td></tr>').join('') + '<tr class="sumrow"><td>المجموع</td><td>' + nf(tot) + '</td></tr></table></div>' : '') +
-    (cats.length > 1 ? '<div class="pchips"><button type="button" data-cf=""' + (OPF ? '' : ' class="on"') + '>الكل</button>' + cats.map(c => '<button type="button" data-cf="' + esc(c) + '"' + (OPF === c ? ' class="on"' : '') + '>' + esc(c) + '</button>').join('') + '</div>' : '') +
-    '<div id="fm"></div>' +
-    (shown.length ? shown.map(x => '<div class="card" style="margin-bottom:10px" data-x="' + esc(x.id) + '" data-k="' + x.k + '"><div style="display:flex;justify-content:space-between;gap:8px"><b>' + esc(x.payee || x.cat) + '</b><span class="tag">' + esc(x.cat) + '</span></div>' +
-      '<div class="lbl">' + hTxt(hijri(x.date)) + ' — ' + gTxt(x.date) + (x.note && x.k === 'o' ? ' — ' + esc(x.note) : '') + '</div>' +
-      '<div class="ord"><span>' + (x.k === 'o' ? 'سند صرف <b>' + x.num + '</b> — ' : '') + R(x.amount) + ' <span class="tag st' + (x.status === 'مطابق' ? 'ok' : x.status === 'ملغى' ? 'no' : '') + '">' + esc(ST[x.status] || x.status) + '</span></span><span>' +
-      (x.k === 'o' ? '<button class="btn alt sm" data-act="vo">عرض</button>' : '') +
-      (adm && x.k === 'o' && (x.status === 'معتمد' || x.status === 'حُوِّل') ? ' <button class="btn alt sm" data-act="cx">إلغاء</button>' : '') +
-      (adm && x.status === 'مطابق' && (x.k === 'o' || x.bank) ? ' <button class="btn alt sm" data-act="um">فك المطابقة</button>' : '') + '</span></div></div>').join('')
-      : '<p class="lbl">لا توجد مصروفات إدارية في هذه السنة.</p>');
+    '<p class="lbl" style="margin:10px 0 0">كل ما صُرف في السنة. التسجيل يتم من «استيراد كشف» بعد التحويل، فيصدر سند الصرف تلقائيًا.</p>' +
+    '<div class="mini" style="margin:14px 0"><div class="ok"><span>للمستفيدين — زكاة</span><b>' + nf(z) + '</b></div><div class="ok"><span>للمستفيدين — صدقة</span><b>' + nf(sd) + '</b></div>' +
+    '<div class="au"><span>مصروفات إدارية</span><b>' + nf(op) + '</b></div><div><span>إجمالي الصرف ' + esc(OPY) + 'هـ</span><b>' + nf(z + sd + op) + '</b></div>' + (open ? '<div><span>سندات بانتظار الكشف</span><b>' + open + '</b></div>' : '') + '</div>' +
+    (cats.length && (OPF === 'op' || OPF.indexOf('c:') === 0) ? '<div class="tw"><table class="wrap"><tr><th>البند الإداري</th><th>المبلغ</th></tr>' + cats.map(c => '<tr><td>' + esc(c) + '</td><td>' + nf(byCat[c]) + '</td></tr>').join('') + '<tr class="sumrow"><td>المجموع</td><td>' + nf(op) + '</td></tr></table></div>' : '') +
+    '<div class="pchips">' + Object.keys(F).map(k => '<button type="button" data-cf="' + esc(k) + '"' + (OPF === k ? ' class="on"' : '') + '>' + esc(F[k][0]) + '</button>').join('') + '</div><div id="fm"></div>' +
+    (shown.length ? '<p class="lbl" style="margin:4px 0 8px">' + shown.length + ' عملية — ' + R(shown.filter(x => x.status === 'مطابق').reduce((a, x) => a + x.amount, 0)) + '</p>' +
+      shown.map((x, i) => '<div class="card" style="margin-bottom:10px" data-i="' + items.indexOf(x) + '"><div style="display:flex;justify-content:space-between;gap:8px"><b>' + esc(x.name) + '</b><span class="tag' + (x.grp === 'ben' ? ' stok' : '') + '">' + esc(x.grp === 'ben' ? x.cat + ' — مستفيد' : x.cat) + '</span></div>' +
+      '<div class="lbl">' + hTxt(x.hijri || hijri(x.date)) + ' — ' + gTxt(x.date) + (x.note ? ' — ' + esc(x.note) : '') + '</div>' +
+      '<div class="ord"><span>' + (x.num ? 'سند صرف <b>' + x.num + '</b> — ' : '') + R(x.amount) + ' <span class="tag st' + (x.status === 'مطابق' ? 'ok' : x.status === 'ملغى' ? 'no' : '') + '">' + esc(ST[x.status] || x.status) + '</span></span><span>' +
+      (x.oid ? '<button class="btn alt sm" data-act="vo">عرض</button>' : '') +
+      (adm && !x.pid && (x.status === 'معتمد' || x.status === 'حُوِّل') ? ' <button class="btn alt sm" data-act="cx">إلغاء</button>' : '') +
+      (adm && x.pid && (x.oid || x.bank) ? ' <button class="btn alt sm" data-act="um">فك المطابقة</button>' : '') + '</span></div></div>').join('')
+      : '<p class="lbl">لا يوجد صرف في هذه السنة' + (OPF ? ' ضمن هذا التصنيف' : '') + '.</p>');
   $('#oy').onchange = () => { OPY = $('#oy').value; ops().catch(e => $('#sv').innerHTML = '<div class="msg">' + esc(e.message) + '</div>'); };
   $('#sv').onclick = e => {
     const cf = e.target.dataset.cf; if (cf !== undefined) { OPF = cf; ops().catch(fail); return; }
-    const a = e.target.dataset.act; if (!a) return; const el = e.target.closest('[data-x]'), x = items.find(i => i.id === el.dataset.x && i.k === el.dataset.k);
-    if (a === 'vo') voucher(x.id);
-    else if (a === 'cx') cancelForm({ id: x.id, num: x.num }, ops);
-    else if (a === 'um') unmatchForm(x.k === 'o' ? { id: x.id } : { pid: x.id }, (x.k === 'o' ? 'سند الصرف ' + x.num + ' ' : x.cat + ' ') + '(' + R(x.amount) + ')', ops);
+    const a = e.target.dataset.act; if (!a) return; const x = items[Number(e.target.closest('[data-i]').dataset.i)];
+    if (a === 'vo') voucher(x.oid, ops);
+    else if (a === 'cx') cancelForm({ id: x.oid, num: x.num }, ops);
+    else if (a === 'um') unmatchForm({ pid: x.pid }, (x.num ? 'سند الصرف ' + x.num + ' ' : x.cat + ' ') + '(' + R(x.amount) + ')', ops);
   };
 }
 
@@ -1258,11 +1259,11 @@ function vchHtml(v, fund) {
     '<div class="tw"><table><tr><th>النوع</th><th>السنة</th><th>المرحلة</th><th>الموافقة من</th></tr><tr><td>' + esc(v.type) + '</td><td>' + esc(v.year) + ' هـ</td><td>' + esc(v.stage || '—') + '</td><td>' + esc(v.approver || '—') + '</td></tr></table></div>' +
     (v.note ? '<p>البيان: ' + esc(v.note) + '</p>' : '') + '</div>';
 }
-async function voucher(id) {
+async function voucher(id, back) {
   const v = await call('getVoucher', { id: id });
   $('#sv').onclick = null;
   $('#sv').innerHTML = '<div class="noprint"><button class="btn" id="rpr">طباعة / حفظ PDF</button> <button class="btn alt" id="rbk">رجوع</button></div>' + vchHtml(v, v.fund);
-  $('#rpr').onclick = () => printBlock($('.rcpt').outerHTML, 'سند صرف ' + v.num); $('#rbk').onclick = () => sub(v.type === 'تشغيلي' ? 'ops' : 'ben');
+  $('#rpr').onclick = () => printBlock($('.rcpt').outerHTML, 'سند صرف ' + v.num); $('#rbk').onclick = () => back ? sub('ops') : sub(v.type === 'تشغيلي' ? 'ops' : 'ben');
 }
 go();
 </script>
