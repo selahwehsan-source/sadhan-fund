@@ -937,7 +937,7 @@ async function imp() {
   };
 }
 /* ===== سحوبات الكشف: كل حوالة لمستفيد تُسجَّل هنا مباشرة (يصدر سند الصرف ويُطابق في نفس اللحظة) ===== */
-const wYears = ws => { const s = new Set(); ws.forEach(w => { const y = Number(hijri(w.date).split('-')[2]); if (y) [y - 1, y, y + 1].forEach(x => s.add(String(x))); }); return Array.from(s); };
+const wYears = ws => { const s = new Set(); ws.forEach(w => { const y = hijri(w.date).split('-')[2]; if (y) s.add(y); }); return Array.from(s); }; // محجوز السنة يُصرف في نفس السنة
 const hStage = d => { const m = Number(hijri(d).split('-')[1]); return m === 9 ? 'في رمضان' : m && m < 9 ? 'قبل رمضان' : 'أخرى'; };
 /** المستفيدون الذين يكفي محجوزهم: من يطابق حسابه أولًا، ثم من متاحه يساوي المبلغ */
 function wCands(w, y) {
@@ -974,9 +974,8 @@ function wRow(w, i) {
     (cs.length ? '<optgroup label="مستفيد محجوز له (سنة ' + esc(st.year) + ')">' + cs.map(c => opt('b:' + c.b.id, c.b.serial + ' — ' + esc(c.b.name) + ' — المتاح ' + nf(c.b.avail[st.year]) + (c.m ? ' ✓ الحساب مطابق' : ''))).join('') + '</optgroup>' : '') +
     (cand.length ? '<optgroup label="سند صرف صادر مسبقًا">' + cand.map(o => opt(o.id, 'سند صرف ' + o.num + ' — ' + esc(o.label) + (o.acct7 && o.acct7 === w.acct7 ? ' ✓ الحساب مطابق' : ''))).join('') + '</optgroup>' : '') +
     (adm ? '<optgroup label="مصروف إداري">' + opt('opv', 'مصروف إداري بسند صرف (محاسب، مراجع، …)') + opt('', 'رسوم بنكية') + '</optgroup>' : '<optgroup label="مصروف إداري">' + opt('', 'رسوم بنكية') + '</optgroup>') + '</select>';
-  const oth = adm && !cs.length ? wYears([w]).filter(y => y !== String(st.year) && wCands(w, y).length) : [];
   const many = adm && cs.filter(c => c.m).length > 1 ? '<div class="lbl">⚠ رقم الحساب مطابق لأكثر من مستفيد، اختر الصحيح بنفسك.</div>' : '';
-  const none = adm && !cs.length && !cand.length ? '<div class="lbl">لا يوجد مستفيد محجوز له ما يكفي هذا المبلغ في سنة ' + esc(st.year) + 'هـ.' + (oth.length ? ' يوجد محجوز في سنة ' + oth.join(' و') + 'هـ: غيّر «سنة المحجوز» أعلاه.' : ' راجع «المقدّر والمحجوز».') + '</div>' : (!adm && !cand.length ? '<div class="lbl">صرف المستفيدين يسجله المدير.</div>' : '');
+  const none = adm && !cs.length && !cand.length ? '<div class="lbl">لا يوجد مستفيد محجوز له ما يكفي هذا المبلغ في سنة ' + esc(st.year) + 'هـ.' + ' (سنة الحوالة). راجع «المقدّر والمحجوز».' + '</div>' : (!adm && !cand.length ? '<div class="lbl">صرف المستفيدين يسجله المدير.</div>' : '');
   const isB = st.v.indexOf('b:') === 0, ys = [Number(hijri(w.date).split('-')[2]) - 1, Number(hijri(w.date).split('-')[2]), Number(hijri(w.date).split('-')[2]) + 1];
   const opd = st.v === 'opv' ? '<div class="grid wd"><div><label>الجهة المستفيدة</label><input class="wp" list="payees" value="' + esc(st.payee) + '" placeholder="مثل: مكتب المحاسبة"></div>' +
     '<div><label>البند</label><select class="wc"><option value="">اختر</option>' + (I.cats || []).map(c => '<option' + (st.cat === c ? ' selected' : '') + '>' + esc(c) + '</option>').join('') + '</select></div>' +
@@ -985,7 +984,7 @@ function wRow(w, i) {
     '<div><label>المرحلة</label><select class="ws">' + ['قبل رمضان', 'في رمضان', 'أخرى'].map(t => '<option' + (st.stage === t ? ' selected' : '') + '>' + t + '</option>').join('') + '</select></div>' +
     '<div><label>الموافقة من</label><input class="wa" value="' + esc(st.approver) + '" placeholder="مجلس الأمناء (المحجوز)"></div>' +
     '<div><label>اسم المستلم</label><input class="wr" value="' + esc(st.recipient) + '"></div><div><label>البيان (اختياري)</label><input class="wn" value="' + esc(st.note) + '"></div></div>' : '';
-  const ysel = adm ? '<div class="wyr"><label>سنة المحجوز</label><select class="wy" aria-label="سنة المحجوز">' + ys.map(y => '<option value="' + y + '"' + (String(y) === String(st.year) ? ' selected' : '') + '>' + y + ' هـ' + (String(y) === hijri(w.date).split('-')[2] ? ' (سنة الحوالة)' : '') + '</option>').join('') + '</select></div>' : '';
+  const ysel = '';
   return '<div class="irow" data-w="' + i + '">' + head + ysel + sel + many + (st.v === 'opv' ? '' : none) + det + opd + '<div><button class="btn sm" data-wgo="1">تسجيل</button></div><div class="ierr">' + (st.err ? '<div class="msg">' + esc(st.err) + '</div>' : '') + '</div></div>';
 }
 const TYPES_ = ['زكاة', 'صدقة'];
@@ -1017,7 +1016,6 @@ function renderImp() {
       I.wrows.map(wRow).join('') + '<datalist id="payees">' + (I.payees || []).map(p => '<option value="' + esc(p.name) + '">').join('') + '</datalist>' : '');
   $('#pout').onchange = e => { const row = e.target.closest('.irow[data-w]'); if (!row) return; const w = I.wrows[row.dataset.w], st = I.ws[w.key], c = e.target.classList;
     if (c.contains('wb')) { st.v = e.target.value; st.err = ''; const b = I.bens.find(x => 'b:' + x.id === st.v); if (b) { st.type = st.type || b.lastType || ''; st.recipient = b.name; } renderImp(); }
-    else if (c.contains('wy')) { st.year = e.target.value; const b = I.bens.find(x => 'b:' + x.id === st.v); if (b && !((b.avail[st.year] || 0) + 0.001 >= w.amount)) st.v = 'x'; renderImp(); }
     else if (c.contains('wt')) { st.type = e.target.value; renderImp(); }
     else if (c.contains('wc')) { st.cat = e.target.value; renderImp(); }
     else if (c.contains('wp')) { const k = (I.payees || []).find(p => p.name === st.payee); if (k && k.cat && !st.cat) st.cat = k.cat; renderImp(); }
