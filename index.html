@@ -771,9 +771,9 @@ async function add(pf) {
         amount: r.querySelector('.ra').value, type: r.querySelector('.rt').value, city: c === '__o' ? r.querySelector('.roi').value : c, note: r.querySelector('.rno').value };
     });
     try {
-      const r = await call('addDeposit', { depositor: $('#dp').value, amount: $('#am').value, date: $('#dt').value, hijri: $('#hj').value, note: $('#nt').value, lines, force: force === true, key: pf && pf.key, account: pf && pf.account, bankBal: pf ? (pf.bal !== undefined ? pf.bal : pf.bankBal) : '', seq: pf ? pf.seq : '' });
+      const r = await call('addDeposit', { depositor: $('#dp').value, amount: $('#am').value, date: $('#dt').value, hijri: $('#hj').value, note: $('#nt').value, lines, force: force === true, key: pf && pf.key, alt: pf && pf.alt, nkey: pf && pf.nkey, account: pf && pf.account, bankBal: pf ? (pf.bal !== undefined ? pf.bal : pf.bankBal) : '', seq: pf ? pf.seq : '' });
       $('#sv').innerHTML = '<div class="msg good">تم الحفظ. رقم السند: <b>' + r.receipt + '</b> — الرصيد الآن ' + R(r.balance) + '</div><button class="btn" id="again">' + (pf ? 'العودة للكشف' : 'إيداع آخر') + '</button> <button class="btn alt" id="rcp">عرض السند</button>';
-      if (pf && IMP) { IMP.saved[pf.key] = r.receipt; IMP.names[(pf.account || '').slice(-7)] = $('#dp').value; }
+      if (pf && IMP) { IMP.saved[pf.key] = r.receipt; IMP.names[(pf.account || '').slice(-7) || pf.nkey] = $('#dp').value; }
       $('#again').onclick = () => sub(pf ? 'imp' : 'add'); $('#rcp').onclick = () => receipt(r.receipt, () => sub(pf ? 'imp' : 'add'));
     } catch (e) {
       if (e.message.indexOf('DUP:') === 0) { $('#res').innerHTML = '<div class="msg">' + esc(e.message.slice(4)) + ' <button class="btn alt sm" id="force">نعم، احفظه</button></div>'; $('#force').onclick = () => $('#save').onclick(true); }
@@ -815,6 +815,19 @@ const RJ = { cols: { balance: 75, credit: 167, debit: 255, date: 508 }, tol: 45,
   stop: new Set(['الوقت', 'ملاحظة']), junk: /ACCT|SOTR|RIBLPEM|NCBK|SANCBK|Payment|EHSAN|SELAH|^FR$|^W$/i,
   isType: t => /تحويل|مستديم|حوالة|حوالات|إيداع|ايداع/.test(t) && !/[A-Za-z]/.test(t) && !/\d/.test(t),
   isFooter: t => /الوثيقة|مسؤولية المحافظة|confidential|holder/i.test(t) };
+/** استخراج اسم المحوِّل: يُحذف اسم صاحب الحساب (الصندوق) الذي يكتبه البنك في الحوالات المحلية الواردة، ورموز المراجع البنكية مثل SAARNBARNB1B… و INMAINM… */
+function words2_(items, fund) {
+  const F = String(fund || '').replace(/\s+/g, ' ').trim(), F2 = F.split(' ').slice(0, 2).join(' ');
+  const clean = items.map(i => { let t = i.text;
+    if (F2 && F2.indexOf(' ') > 0 && t.indexOf(F2) >= 0) { const fw = F.split(' '); for (let n = fw.length; n >= 2; n--) { const ph = fw.slice(0, n).join(' '); if (t.indexOf(ph) >= 0) { t = t.replace(ph, ' '); break; } } }
+    const ar = (t.match(/[\u0600-\u06FF]+/g) || []).join(' ');
+    if (F && ar.split(' ').length >= 2 && F.indexOf(ar) >= 0 && !/[A-Za-z]{2,}/.test(t.replace(/[A-Za-z]*\d[A-Za-z\d]*/g, ''))) t = t.replace(/[\u0600-\u06FF]+/g, ' '); // سطر تكملة لاسم الصندوق
+    return { x: i.x, y: i.y, text: t }; });
+  const ar = clean.filter(i => /[\u0600-\u06FF]/.test(i.text)).sort((a, b) => b.x - a.x).flatMap(i => i.text.match(/[\u0600-\u06FF]+/g) || []).filter(w => !RJ.stop.has(w));
+  const la = clean.filter(i => /[A-Za-z]/.test(i.text)).sort((a, b) => (b.y - a.y) || (a.x - b.x)).flatMap(i => i.text.split(/[^A-Za-z0-9]+/)).filter(w => /^[A-Za-z]{2,}$/.test(w) && !RJ.junk.test(w));
+  return { ar, la };
+}
+/** الطريقة الأولى (تبقى لحساب المفتاح القديم فقط، حتى لا تتكرر عمليات استوردت سابقًا) */
 function words_(items) {
   const ar = [...items.filter(i => /[\u0600-\u06FF]/.test(i.text))].sort((a, b) => b.x - a.x).flatMap(i => i.text.match(/[\u0600-\u06FF]+/g) || []).filter(w => !RJ.stop.has(w));
   const la = [...items.filter(i => /[A-Za-z]/.test(i.text))].sort((a, b) => a.x - b.x).flatMap(i => i.text.match(/[A-Za-z]+/g) || []).filter(w => w.length >= 2 && !RJ.junk.test(w));
@@ -846,12 +859,16 @@ function parseStatement(pages) {
       }
     }
   }
+  let fund = '';
+  if (pages[0]) { const b = buildTextBands_(pages[0], 4).find(b => b.some(i => /Customer Name|اسم العميل/.test(i.text)));
+    if (b) fund = b.filter(i => /[\u0600-\u06FF]/.test(i.text) && !/اسم العميل/.test(i.text)).map(i => i.text).join(' ').replace(/\s+/g, ' ').trim(); }
   const fin = t => {
-    const w = words_(t.items), acct = (t.raw.match(/ACCT\/(\d{10,})/) || t.raw.match(/-{3}(\d{10,})-/) || [])[1] || '';
+    const w0 = words_(t.items), w = words2_(t.items, fund), acct = (t.raw.match(/ACCT\/(\d{10,})/) || t.raw.match(/-{3}(\d{10,})-/) || [])[1] || '';
     const time = (t.raw.match(/(\d{1,2}:\d{2}:\d{2})/) || [])[1] || '';
-    const nm = (w.ar.join(' ') || w.la.map(x => x[0] + x.slice(1).toLowerCase()).join(' ')).trim();
-    return { seq: t.seq, bal: t.bal, date: t.date, amount: t.amount, type: t.type.replace(/^عملية\s*/, '').trim() || 'عملية', name: nm, account: acct, acct7: acct.slice(-7), time,
-      raw: t.raw.replace(/\s+/g, ' ').trim(), key: [t.date, t.amount.toFixed(2), time, acct.slice(-7) || nm].join('|') };
+    const nmOf = v => (v.ar.join(' ') || v.la.map(x => x[0] + x.slice(1).toLowerCase()).join(' ')).trim(), nm = nmOf(w), old = nmOf(w0);
+    const nkey = !acct && w.la.length && !w.ar.length ? 'n' + w.la.join(' ').toUpperCase().slice(0, 40) : !acct && nm ? 'n' + nm.slice(0, 40) : '';
+    return { seq: t.seq, bal: t.bal, date: t.date, amount: t.amount, type: t.type.replace(/^عملية\s*/, '').trim() || 'عملية', name: nm, account: acct, acct7: acct.slice(-7), nkey: nkey, time,
+      raw: t.raw.replace(/\s+/g, ' ').trim(), key: [t.date, t.amount.toFixed(2), time, time ? acct.slice(-7) : (acct.slice(-7) || nm)].join('|'), alt: [t.date, t.amount.toFixed(2), time, acct.slice(-7) || old].join('|') };
   };
   return { deposits: dep.map(fin), withdrawals: wd.map(fin), closing: closing };
 }
@@ -912,7 +929,7 @@ async function imp() {
     try {
       const r = await readPdf(f);
       if (!r.deposits.length && !r.withdrawals.length) throw new Error('لم أتعرف على أي عملية في الملف. تأكد أنه كشف حساب من الراجحي.');
-      const c = await call('importCheck', { items: r.deposits.concat(r.withdrawals).map(d => ({ key: d.key, acct7: d.acct7 })), closing: r.closing, years: wYears(r.withdrawals) });
+      const c = await call('importCheck', { items: r.deposits.concat(r.withdrawals).map(d => ({ key: d.key, alt: d.alt, acct7: d.acct7 })), closing: r.closing, years: wYears(r.withdrawals) });
       IMP = { bens: c.bens || [], appr: c.approver || '', ws: {}, orders: c.orders || [], wrows: r.withdrawals.filter(d => c.done.indexOf(d.key) < 0), rows: r.deposits.filter(d => c.done.indexOf(d.key) < 0), done: c.done.length, wd: r.withdrawals.length, names: c.names, total: r.deposits.length, saved: {} };
       renderImp(); toast('تمت قراءة الكشف');
     } catch (e) { $('#pout').innerHTML = '<div class="msg">' + esc(e.message) + '</div>'; }
@@ -961,7 +978,7 @@ function wRow(w, i) {
 }
 const TYPES_ = ['زكاة', 'صدقة'];
 const wItem = w => { const st = IMP.ws[w.key], b = IMP.bens.find(x => 'b:' + x.id === st.v);
-  return { key: w.key, beneficiary: b.id, year: st.year, type: st.type, stage: st.stage, approver: st.approver, recipient: st.recipient, note: st.note, date: w.date, hijri: hijri(w.date), amount: w.amount, account: w.account, bankBal: w.bal, seq: w.seq }; };
+  return { key: w.key, alt: w.alt, beneficiary: b.id, year: st.year, type: st.type, stage: st.stage, approver: st.approver, recipient: st.recipient, note: st.note, date: w.date, hijri: hijri(w.date), amount: w.amount, account: w.account, bankBal: w.bal, seq: w.seq }; };
 const wReady = () => IMP.wrows.filter(w => !IMP.saved[w.key] && IMP.ws[w.key] && IMP.ws[w.key].v.indexOf('b:') === 0 && IMP.ws[w.key].type);
 async function wPay(list) {
   const I = IMP, r = await call('payFromStatement', { approver: $('#wga') ? $('#wga').value : '', items: list.map(wItem) });
@@ -975,10 +992,10 @@ function renderImp() {
   const I = IMP; I.ws = I.ws || {}; const left = I.rows.filter(d => !I.saved[d.key]).length, wl = I.wrows.filter(w => !I.saved[w.key]).length, rd = me.role === 'admin' ? wReady().length : 0;
   $('#pout').innerHTML = '<div class="card"><b>' + I.total + '</b> إيداعًا في الكشف: <b>' + I.done + '</b> مسجّلة سابقًا، و<b>' + left + '</b> بانتظار التصنيف.' +
     (I.wd ? '<br><span class="lbl">وفيه ' + I.wd + ' عملية سحب، ' + wl + ' منها بانتظار التسجيل (أسفل القائمة).</span>' : '') + '</div>' +
-    I.rows.map((d, i) => { const sv = I.saved[d.key], nm = (I.names[d.acct7] || d.name);
+    I.rows.map((d, i) => { const sv = I.saved[d.key], nk = d.acct7 || d.nkey, nm = (I.names[nk] || d.name);
       return '<div class="irow" data-i="' + i + '"><div><b>' + R(d.amount) + '</b> <span class="lbl">' + hTxt(hijri(d.date)) + ' — ' + gTxt(d.date) + ' — ' + esc(d.type) + (d.acct7 ? ' — حساب …' + esc(d.acct7) : '') + '</span></div>' +
         (sv ? '<div><span class="tag">حُفظ</span> رقم السند ' + sv + ' <button class="btn alt sm" data-rc="' + sv + '">عرض السند</button></div>' :
-        '<input class="in" value="' + esc(nm) + '" placeholder="اسم المودع">' + (I.names[d.acct7] ? '<span class="lbl">اسم محفوظ لهذا الحساب</span>' : '') +
+        '<input class="in" value="' + esc(nm) + '" placeholder="اسم المودع">' + (I.names[nk] ? '<span class="lbl">' + (d.acct7 ? 'اسم محفوظ لهذا الحساب' : 'اسم محفوظ لهذا المحوِّل') + '</span>' : (d.name && !d.acct7 && /[A-Za-z]/.test(d.name) ? '<span class="lbl">الاسم كما ورد بالإنجليزية، صحّحه بالعربية مرة واحدة ويتذكره النظام</span>' : '')) +
         '<div><button class="btn sm" data-a="زكاة">زكاة</button> <button class="btn alt sm" data-a="صدقة">صدقة</button> <button class="btn alt sm" data-a="split">تفصيل / تقسيم</button></div><div class="ierr"></div>') + '</div>'; }).join('') +
     (I.wrows.length ? '<h3 style="font-family:Noto Kufi Arabic,sans-serif;font-weight:600;font-size:17px;margin:22px 0 0">السحوبات من الحساب</h3><p class="lbl">اختر لكل حوالة المستفيد الذي صُرفت له، فيصدر سند الصرف تلقائيًا ويُخصم من محجوزه.</p>' +
       (me.role === 'admin' && wl ? '<div class="card"><label for="wga" style="margin-top:0">الموافقة من (تُطبَّق على كل السحوبات)</label><input id="wga" value="' + esc(I.appr || '') + '" placeholder="مجلس الأمناء (المحجوز)">' +
@@ -998,7 +1015,7 @@ function renderImp() {
     if (e.target.dataset.wgo) { const row = e.target.closest('.irow'), w = I.wrows[row.dataset.w], st = I.ws[w.key], sel = st.v, err = m => row.querySelector('.ierr').innerHTML = '<div class="msg">' + esc(m) + '</div>';
       if (sel === 'x') return err('اختر المستفيد أو نوع المصروف.');
       if (sel.indexOf('b:') === 0) { if (!st.type) return err('اختر النوع: زكاة أو صدقة.'); try { await wPay([w]); } catch (er) { err(er.message); } return; }
-      const base = { date: w.date, hijri: hijri(w.date), amount: w.amount, account: w.account, bankBal: w.bal, seq: w.seq, key: w.key };
+      const base = { date: w.date, hijri: hijri(w.date), amount: w.amount, account: w.account, bankBal: w.bal, seq: w.seq, key: w.key, alt: w.alt };
       try {
         if (sel === '' || sel === 'op:أخرى') { await call('addPayment', Object.assign(base, { year: hijri(w.date).split('-')[2], category: 'تشغيلي', opcat: sel ? 'أخرى' : 'رسوم بنكية', note: cleanRaw(w.raw) })); I.saved[w.key] = 'مصروف إداري'; }
         else { const o = I.orders.find(x => x.id === sel); await call('matchOrder', Object.assign(base, { id: sel })); I.saved[w.key] = 'طوبق مع سند صرف ' + o.num; I.orders = I.orders.filter(x => x.id !== sel); }
@@ -1008,10 +1025,10 @@ function renderImp() {
     const rc = e.target.dataset.rc; if (rc) return receipt(rc, () => sub('imp'));
     const a = e.target.dataset.a; if (!a) return; const row = e.target.closest('.irow'), d = I.rows[row.dataset.i], name = row.querySelector('.in').value.trim();
     if (!name) return row.querySelector('.ierr').innerHTML = '<div class="msg">اكتب اسم المودع.</div>';
-    if (a === 'split') return sub('add', { depositor: name, amount: d.amount, date: d.date, key: d.key, account: d.account, bankBal: d.bal, seq: d.seq });
+    if (a === 'split') return sub('add', { depositor: name, amount: d.amount, date: d.date, key: d.key, alt: d.alt, nkey: d.nkey, account: d.account, bankBal: d.bal, seq: d.seq });
     e.target.disabled = true;
-    try { const r = await call('addDeposit', { depositor: name, amount: d.amount, date: d.date, hijri: hijri(d.date), key: d.key, account: d.account, bankBal: d.bal, seq: d.seq, lines: [{ name: name, amount: d.amount, type: a, city: '', note: '' }] });
-      I.saved[d.key] = r.receipt; I.names[d.acct7] = name; renderImp(); }
+    try { const r = await call('addDeposit', { depositor: name, amount: d.amount, date: d.date, hijri: hijri(d.date), key: d.key, alt: d.alt, nkey: d.nkey, account: d.account, bankBal: d.bal, seq: d.seq, lines: [{ name: name, amount: d.amount, type: a, city: '', note: '' }] });
+      I.saved[d.key] = r.receipt; I.names[d.acct7 || d.nkey] = name; renderImp(); }
     catch (er) { e.target.disabled = false; row.querySelector('.ierr').innerHTML = '<div class="msg">' + esc(er.message) + '</div>'; }
   };
 }
