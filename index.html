@@ -912,7 +912,8 @@ async function imp() {
     '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5M12 18v-6M9 15l3-3 3 3"/></svg>' +
     '<b id="dzt">اضغط لاختيار كشف الحساب</b><span class="lbl" id="dzs">أو اسحب ملف PDF من الراجحي إلى هنا. يُقرأ داخل جهازك ولا يُرسل منه إلا ما تحفظه.</span></label>' +
     '<button class="btn hid" id="pgo">قراءة الكشف</button><div id="pout"></div>';
-  if (IMP) renderImp();
+  if (IMP) { renderImp(); // عند الرجوع للصفحة: المحجوز والمستفيدون والسندات تُحدَّث تلقائيًا
+    call_('importCheck', { items: [], years: wYears(IMP.wrows) }).then(c => { if (!IMP || CUR !== 'imp') return; Object.assign(IMP, { orders: c.orders || [], bens: c.bens || [], payees: c.payees || [], cats: c.cats || [] }); renderImp(); }).catch(() => { }); }
   call('dashboard').then(d => { const b = d.bank || {}, el = $('#recon'); if (!el || !b.date) return; const diff = Math.round((b.bal - d.balance) * 100) / 100;
     el.innerHTML = diff === 0 ? '<div class="recon ok">✓ رصيد النظام مطابق لآخر كشف بنكي (' + gTxt(b.date) + ') — ' + R(b.bal) + '</div>'
       : '<div class="recon"><b>يوجد فرق ' + R(Math.abs(diff)) + ' عن كشف البنك</b><span>رصيد البنك في ' + gTxt(b.date) + ': ' + R(b.bal) + ' — رصيد النظام: ' + R(d.balance) + '</span><span>ارفع الكشف وصنّف العمليات المتبقية حتى يتطابقا.</span></div>'; }).catch(() => { });
@@ -991,7 +992,6 @@ const TYPES_ = ['زكاة', 'صدقة'];
 const wItem = w => { const st = IMP.ws[w.key], b = IMP.bens.find(x => 'b:' + x.id === st.v);
   if (st.v === 'opv') return { kind: 'op', key: w.key, alt: w.alt, payee: st.payee, cat: st.cat, approver: st.approver, note: st.note, date: w.date, hijri: hijri(w.date), amount: w.amount, account: w.account, bankBal: w.bal, seq: w.seq };
   return { key: w.key, alt: w.alt, beneficiary: b.id, year: st.year, type: st.type, stage: st.stage, approver: st.approver, recipient: st.recipient, note: st.note, date: w.date, hijri: hijri(w.date), amount: w.amount, account: w.account, bankBal: w.bal, seq: w.seq }; };
-const wReady = () => IMP.wrows.filter(w => { const st = IMP.ws[w.key]; return !IMP.saved[w.key] && st && ((st.v.indexOf('b:') === 0 && st.type) || (st.v === 'opv' && st.payee.trim() && st.cat)); });
 async function wPay(list) {
   const I = IMP, r = await call('payFromStatement', { approver: $('#wga') ? $('#wga').value : '', items: list.map(wItem) });
   let n = 0; r.results.forEach(x => { const w = I.wrows.find(z => z.key === x.key), st = I.ws[x.key];
@@ -1002,7 +1002,7 @@ async function wPay(list) {
   renderImp(); toast(n === list.length ? (n > 1 ? 'سُجّلت ' + n + ' حوالات' : 'سُجّلت الحوالة') : 'سُجّل ' + n + ' من ' + list.length + '، راجع المتبقي', n !== list.length);
 }
 function renderImp() {
-  const I = IMP; I.ws = I.ws || {}; const left = I.rows.filter(d => !I.saved[d.key]).length, wl = I.wrows.filter(w => !I.saved[w.key]).length, rd = me.role === 'admin' ? wReady().length : 0;
+  const I = IMP; I.ws = I.ws || {}; const left = I.rows.filter(d => !I.saved[d.key]).length, wl = I.wrows.filter(w => !I.saved[w.key]).length;
   $('#pout').innerHTML = '<div class="card"><b>' + I.total + '</b> إيداعًا في الكشف: <b>' + I.done + '</b> مسجّلة سابقًا، و<b>' + left + '</b> بانتظار التصنيف.' +
     (I.wd ? '<br><span class="lbl">وفيه ' + I.wd + ' عملية سحب، ' + wl + ' منها بانتظار التسجيل (أسفل القائمة).</span>' : '') + '</div>' +
     I.rows.map((d, i) => { const sv = I.saved[d.key], nk = d.acct7 || d.nkey, nm = (I.names[nk] || d.name);
@@ -1011,8 +1011,7 @@ function renderImp() {
         '<input class="in" value="' + esc(nm) + '" placeholder="اسم المودع">' + (I.names[nk] ? '<span class="lbl">' + (d.acct7 ? 'اسم محفوظ لهذا الحساب' : 'اسم محفوظ لهذا المحوِّل') + '</span>' : (d.name && !d.acct7 && /[A-Za-z]/.test(d.name) ? '<span class="lbl">الاسم كما ورد بالإنجليزية، صحّحه بالعربية مرة واحدة ويتذكره النظام</span>' : '')) +
         '<div><button class="btn sm" data-a="زكاة">زكاة</button> <button class="btn alt sm" data-a="صدقة">صدقة</button> <button class="btn alt sm" data-a="split">تفصيل / تقسيم</button></div><div class="ierr"></div>') + '</div>'; }).join('') +
     (I.wrows.length ? '<h3 style="font-family:Noto Kufi Arabic,sans-serif;font-weight:600;font-size:17px;margin:22px 0 0">السحوبات من الحساب</h3><p class="lbl">اختر لكل حوالة المستفيد الذي صُرفت له أو «مصروف إداري بسند صرف»، فيصدر سند الصرف تلقائيًا.</p>' +
-      (me.role === 'admin' && wl ? '<div class="card"><label for="wga" style="margin-top:0">الموافقة من (تُطبَّق على كل السحوبات)</label><input id="wga" value="' + esc(I.appr || '') + '" placeholder="مجلس الأمناء (المحجوز)">' +
-        '<div class="btnrow"><button class="btn" id="wall"' + (rd ? '' : ' disabled') + '>تسجيل كل المختار (' + rd + ')</button><button class="btn alt" id="oref">تحديث المستفيدين والسندات</button></div></div>' : '') +
+      (me.role === 'admin' && wl ? '<div class="card"><label for="wga" style="margin-top:0">الموافقة من (تُطبَّق على كل السحوبات)</label><input id="wga" value="' + esc(I.appr || '') + '" placeholder="مجلس الأمناء (المحجوز)"></div>' : '') +
       I.wrows.map(wRow).join('') + '<datalist id="payees">' + (I.payees || []).map(p => '<option value="' + esc(p.name) + '">').join('') + '</datalist>' : '');
   $('#pout').onchange = e => { const row = e.target.closest('.irow[data-w]'); if (!row) return; const w = I.wrows[row.dataset.w], st = I.ws[w.key], c = e.target.classList;
     if (c.contains('wb')) { st.v = e.target.value; st.err = ''; const b = I.bens.find(x => 'b:' + x.id === st.v); if (b) { st.type = st.type || b.lastType || ''; st.recipient = b.name; } renderImp(); }
@@ -1024,8 +1023,6 @@ function renderImp() {
     const row = e.target.closest('.irow[data-w]'); if (!row) return; const st = I.ws[I.wrows[row.dataset.w].key], c = e.target.classList;
     if (c.contains('wp')) st.payee = e.target.value; else if (c.contains('wa')) { st.approver = e.target.value; st.apprSet = true; } else if (c.contains('wr')) st.recipient = e.target.value; else if (c.contains('wn')) st.note = e.target.value; };
   $('#pout').onclick = async e => {
-    if (e.target.id === 'oref') { try { const c = await call('importCheck', { items: [], years: wYears(I.wrows) }); I.orders = c.orders || []; I.bens = c.bens || []; I.payees = c.payees || []; I.cats = c.cats || []; renderImp(); } catch (er) { } return; }
-    if (e.target.id === 'wall') { const l = wReady(); if (l.length) try { await wPay(l); } catch (er) { } return; }
     if (e.target.dataset.wgo) { const row = e.target.closest('.irow'), w = I.wrows[row.dataset.w], st = I.ws[w.key], sel = st.v, err = m => row.querySelector('.ierr').innerHTML = '<div class="msg">' + esc(m) + '</div>';
       if (sel === 'x') return err('اختر المستفيد أو نوع المصروف.');
       if (sel.indexOf('b:') === 0) { if (!st.type) return err('اختر النوع: زكاة أو صدقة.'); try { await wPay([w]); } catch (er) { err(er.message); } return; }
