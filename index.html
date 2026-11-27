@@ -624,7 +624,7 @@ function enterAdmin(fresh) {
   document.body.classList.add('admin');
   $('#abf').textContent = $('#fund').textContent;
   const it = k => can(k) ? '<button type="button" data-nav="' + k + '">' + svg(k) + '<span>' + SEC[k].t + '</span><i class="bdg hid" data-b="' + k + '"></i></button>' : '';
-  $('#side').innerHTML = '<div class="sd-b"><div class="logo sm">' + document.querySelector('.logo').innerHTML + '</div><div><b>' + esc($('#fund').textContent) + '</b><span>' + esc(me.name) + ' · ' + ROLE[me.role] + '</span></div></div>' +
+  $('#side').innerHTML = '<div class="sd-b"><div class="logo sm">' + document.querySelector('.logo').innerHTML + '</div><div><b>' + esc($('#fund').textContent) + '</b><span>' + esc(me.name) + ' — ' + ROLE[me.role] + '</span></div></div>' +
     '<div class="sd-a"><button type="button" class="ib" data-act2="theme" aria-label="تبديل الوضع الليلي والنهاري">' + $('#tt2').innerHTML + '</button><button type="button" class="ib lo" data-act2="out" aria-label="تسجيل الخروج">' + svg('logout') + '</button></div>' +
     '<div class="sd-n" role="navigation">' + it('dash') + '<div class="sd-g">الإيرادات</div>' + it('imp') + it('add') + it('list') + '<div class="sd-g">الصرف</div>' + it('ben') + it('ops') +
     '<div class="sd-g">أخرى</div>' + it('rep') + it('users') + it('settings') + '</div>';
@@ -651,7 +651,7 @@ function sub(n, pf, noPush, soft) {
   if (!SEC[n] || !can(n)) n = 'dash';
   CUR = n; const g = SEC[n].g; if (GRP[g]) LAST[g] = n;
   if (!noPush) navPush('a:' + n);
-  $('#abs').textContent = GRP[g] ? GT[g] + ' · ' + SEC[n].t : SEC[n].t; document.title = SEC[n].t + ' — ' + $('#fund').textContent;
+  $('#abs').textContent = GRP[g] ? GT[g] + ' — ' + SEC[n].t : SEC[n].t; document.title = SEC[n].t + ' — ' + $('#fund').textContent;
   document.querySelectorAll('#side [data-nav]').forEach(b => { const on = b.dataset.nav === n; b.classList.toggle('on', on); b.setAttribute('aria-current', on ? 'page' : 'false'); });
   document.querySelectorAll('#bnav [data-g]').forEach(b => { const on = b.dataset.g === g || (g === 'more' && b.dataset.g === 'more'); b.classList.toggle('on', on); b.setAttribute('aria-current', on ? 'page' : 'false'); });
   setFab(n); if (!soft) { window.scrollTo(0, 0); refreshBadges(); }
