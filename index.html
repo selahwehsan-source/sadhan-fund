@@ -1142,14 +1142,14 @@ async function ops() {
   cats.forEach(c => { F['c:' + c] = [c, x => x.grp === 'op' && x.cat === c]; }); if (!F[OPF]) OPF = '';
   const shown = items.filter(F[OPF][1]), open = items.filter(x => x.status === 'معتمد' || x.status === 'حُوِّل').length;
   $('#sv').innerHTML = '<div class="ybar"><div class="yfld"><label for="oy">السنة</label><select id="oy" aria-label="السنة الهجرية">' + ySel(OPY) + '</select></div></div>' +
-    '<p class="lbl" style="margin:10px 0 0">كل ما صُرف في السنة. التسجيل يتم من «استيراد كشف» بعد التحويل، فيصدر سند الصرف تلقائيًا.</p>' +
+    '<p class="lbl" style="margin:10px 0 0">كل ما صُرف في السنة حسب تاريخ الحوالة. التسجيل يتم من «استيراد كشف» بعد التحويل، فيصدر سند الصرف تلقائيًا.</p>' +
     '<div class="mini" style="margin:14px 0"><div class="ok"><span>للمستفيدين — زكاة</span><b>' + nf(z) + '</b></div><div class="ok"><span>للمستفيدين — صدقة</span><b>' + nf(sd) + '</b></div>' +
     '<div class="au"><span>مصروفات إدارية</span><b>' + nf(op) + '</b></div><div><span>إجمالي الصرف ' + esc(OPY) + 'هـ</span><b>' + nf(z + sd + op) + '</b></div>' + (open ? '<div><span>سندات بانتظار الكشف</span><b>' + open + '</b></div>' : '') + '</div>' +
     (cats.length && (OPF === 'op' || OPF.indexOf('c:') === 0) ? '<div class="tw"><table class="wrap"><tr><th>البند الإداري</th><th>المبلغ</th></tr>' + cats.map(c => '<tr><td>' + esc(c) + '</td><td>' + nf(byCat[c]) + '</td></tr>').join('') + '<tr class="sumrow"><td>المجموع</td><td>' + nf(op) + '</td></tr></table></div>' : '') +
     '<div class="pchips">' + Object.keys(F).map(k => '<button type="button" data-cf="' + esc(k) + '"' + (OPF === k ? ' class="on"' : '') + '>' + esc(F[k][0]) + '</button>').join('') + '</div><div id="fm"></div>' +
     (shown.length ? '<p class="lbl" style="margin:4px 0 8px">' + shown.length + ' عملية — ' + R(shown.filter(x => x.status === 'مطابق').reduce((a, x) => a + x.amount, 0)) + '</p>' +
       shown.map((x, i) => '<div class="card" style="margin-bottom:10px" data-i="' + items.indexOf(x) + '"><div style="display:flex;justify-content:space-between;gap:8px"><b>' + esc(x.name) + '</b><span class="tag' + (x.grp === 'ben' ? ' stok' : '') + '">' + esc(x.grp === 'ben' ? x.cat + ' — مستفيد' : x.cat) + '</span></div>' +
-      '<div class="lbl">' + hTxt(x.hijri || hijri(x.date)) + ' — ' + gTxt(x.date) + (x.note ? ' — ' + esc(x.note) : '') + '</div>' +
+      '<div class="lbl">' + hTxt(x.hijri || hijri(x.date)) + ' — ' + gTxt(x.date) + (x.note ? ' — ' + esc(x.note) : '') + (x.alloc && x.alloc !== String(OPY) ? ' <span class="tag">من محجوز ' + esc(x.alloc) + 'هـ</span>' : '') + '</div>' +
       '<div class="ord"><span>' + (x.num ? 'سند صرف <b>' + x.num + '</b> — ' : '') + R(x.amount) + ' <span class="tag st' + (x.status === 'مطابق' ? 'ok' : x.status === 'ملغى' ? 'no' : '') + '">' + esc(ST[x.status] || x.status) + '</span></span><span>' +
       (x.oid ? '<button class="btn alt sm" data-act="vo">عرض</button>' : '') +
       (adm && !x.pid && (x.status === 'معتمد' || x.status === 'حُوِّل') ? ' <button class="btn alt sm" data-act="cx">إلغاء</button>' : '') +
